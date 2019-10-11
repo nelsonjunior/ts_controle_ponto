@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1018918107464-htm5o3ika3k2at1ihr0fubvndaa9tbsq.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1018918107464-htm5o3ika3k2at1ihr0fubvndaa9tbsq</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1018918107464-vu5mn8hvdja4glk24fg37mqo4de0f79k.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBc5FqHFfCoOFq5xTmESChNwG_Eo5kjAlY</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1018918107464</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>br.com.artsofttec.tsControlePonto</string>
+	<key>PROJECT_ID</key>
+	<string>ts-controle-de-ponto</string>
+	<key>STORAGE_BUCKET</key>
+	<string>ts-controle-de-ponto.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1018918107464:ios:9cd3693f74dcbabd6e1b7d</string>
+	<key>DATABASE_URL</key>
+	<string>https://ts-controle-de-ponto.firebaseio.com</string>
+</dict>
+</plist>
