@@ -5,12 +5,17 @@ import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:ts_controle_ponto/app/app_bloc.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
+import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/models/entrada_saida_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
+import 'package:ts_controle_ponto/app/shared/models/usuario_model.dart';
+import 'package:ts_controle_ponto/app/shared/repositories/repository.dart';
 import 'package:ts_controle_ponto/app/shared/utils/list_utils.dart';
 
 class PontoBloc extends BlocBase {
+  final _repository = Repository();
+
   var rnd = Random();
 
   Map<DateTime, PontoModel> histPontos = Map();
@@ -25,20 +30,34 @@ class PontoBloc extends BlocBase {
 
   Stream<PontoModel> get pontoStream => _pontoAtual.stream;
 
-  void obterPonto(DateTime dataReferencia) {
-    if (pontoInicial.dataReferencia.compareTo(dataReferencia) == 0) {
+  Future<void> obterPonto(DateTime dataReferencia) async {
+    if (pontoInicial != null && pontoInicial.dataReferencia.compareTo(dataReferencia) == 0) {
       return;
     }
 
     print('OBTER PONTO: $dataReferencia');
 
-    if (!histPontos.containsKey(dataReferencia)) {
-      histPontos[dataReferencia] = PontoModel.empty(dataReferencia);
+    UsuarioModel usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
+
+    if (usuarioAtual != null) {
+      print('Usuario ${usuarioAtual.id}');
+
+      pontoInicial = await _repository.recuperarPonto(usuarioAtual.id, dataReferencia);
+      
+      if (pontoInicial == null) {
+
+        pontoInicial = PontoModel.empty(dataReferencia);
+        pontoInicial.identUsuario = usuarioAtual.id;
+        await _repository.incluirPonto(pontoInicial);
+
+      } else{
+
+        pontoInicial.marcacoes = await _repository.recuperarMarcacoes(
+          pontoInicial.identUsuario, pontoInicial.ident);
+      }
+
+      _pontoAtual.sink.add(pontoInicial);
     }
-
-    pontoInicial = histPontos[dataReferencia];
-
-    _pontoAtual.sink.add(pontoInicial);
   }
 
   void registrarMarcacao() {
@@ -53,11 +72,16 @@ class PontoBloc extends BlocBase {
       marcacao = marcacao.add(Duration(minutes: rnd.nextInt(180) + 1));
     }
 
-    pontoInicial.marcacoes
-        .add(MarcacaoPontoModel(pontoInicial.ident, marcacao));
+    MarcacaoPontoModel marcacaoPontoModel = MarcacaoPontoModel(
+        pontoInicial.identUsuario, pontoInicial.ident, marcacao);
+
+    pontoInicial.marcacoes.add(marcacaoPontoModel);
 
     ordernarMarcacoes();
     definirTempoTrabalhado();
+
+    _repository.incluirPonto(pontoInicial);
+    _repository.incluirMarcacao(marcacaoPontoModel);
 
     _pontoAtual.sink.add(pontoInicial);
   }
@@ -106,6 +130,7 @@ class PontoBloc extends BlocBase {
   }
 
   void removerMarcacao(MarcacaoPontoModel marcacao) {
+    _repository.removerMarcacao(marcacao);
     pontoInicial.marcacoes.remove(marcacao);
     ordernarMarcacoes();
     definirTempoTrabalhado();
