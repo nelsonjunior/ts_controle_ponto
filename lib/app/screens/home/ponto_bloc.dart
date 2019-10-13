@@ -20,74 +20,90 @@ class PontoBloc extends BlocBase {
 
   Map<DateTime, PontoModel> histPontos = Map();
 
-  PontoModel pontoInicial = PontoModel.empty(DateTime.now());
+  PontoModel pontoSelecionado = PontoModel.empty(DateTime.now());
+
+  bool loading = false;
 
   BehaviorSubject<PontoModel> _pontoAtual;
 
   PontoBloc() {
-    _pontoAtual = new BehaviorSubject<PontoModel>.seeded(this.pontoInicial);
+    _pontoAtual = new BehaviorSubject<PontoModel>.seeded(this.pontoSelecionado);
   }
 
   Stream<PontoModel> get pontoStream => _pontoAtual.stream;
 
-  Future<void> obterPonto(DateTime dataReferencia) async {
-    if (pontoInicial != null && pontoInicial.dataReferencia.compareTo(dataReferencia) == 0) {
-      return;
-    }
+  void limparPonto() {
+    pontoSelecionado = PontoModel.empty(DateTime.now());
+    _pontoAtual.sink.add(pontoSelecionado);
+  }
 
-    print('OBTER PONTO: $dataReferencia');
+  void obterPonto(DateTime dataReferencia) {
+    loading = true;
 
     UsuarioModel usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
 
-    if (usuarioAtual != null) {
-      print('Usuario ${usuarioAtual.id}');
-
-      pontoInicial = await _repository.recuperarPonto(usuarioAtual.id, dataReferencia);
+    if (pontoSelecionado != null &&
+        pontoSelecionado.dataReferencia.compareTo(dataReferencia) == 0) {
       
-      if (pontoInicial == null) {
+      loading = false;
 
-        pontoInicial = PontoModel.empty(dataReferencia);
-        pontoInicial.identUsuario = usuarioAtual.id;
-        await _repository.incluirPonto(pontoInicial);
+    } else if (usuarioAtual != null) {
+      pontoSelecionado = PontoModel.empty(dataReferencia);
+      pontoSelecionado.identUsuario = usuarioAtual.email;
+      _pontoAtual.sink.add(pontoSelecionado);
 
-      } else{
+      _repository
+          .recuperarPonto(usuarioAtual.email, dataReferencia)
+          .then((PontoModel ponto) {
+        if (ponto != null) {
+          pontoSelecionado = ponto;
+          ordernarMarcacoes();
+          definirTempoTrabalhado();
+        } else {
+          pontoSelecionado = PontoModel.empty(dataReferencia);
+          pontoSelecionado.identUsuario = usuarioAtual.email;
+        }
 
-        pontoInicial.marcacoes = await _repository.recuperarMarcacoes(
-          pontoInicial.identUsuario, pontoInicial.ident);
-      }
+        loading = false;
 
-      _pontoAtual.sink.add(pontoInicial);
+        _pontoAtual.sink.add(pontoSelecionado);
+      });
     }
   }
 
   void registrarMarcacao() {
     print('REGISTRANDO MARCAÇÃO');
 
+    UsuarioModel usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
+
     DateTime marcacao = DateTime.now();
 
     if (AppModule.to.bloc<AppBloc>().modoTeste) {
-      if (pontoInicial.marcacoes.isNotEmpty) {
-        marcacao = pontoInicial.marcacoes.last.marcacao;
+      if (pontoSelecionado.marcacoes.isNotEmpty) {
+        marcacao = pontoSelecionado.marcacoes.last.marcacao;
       }
       marcacao = marcacao.add(Duration(minutes: rnd.nextInt(180) + 1));
     }
 
     MarcacaoPontoModel marcacaoPontoModel = MarcacaoPontoModel(
-        pontoInicial.identUsuario, pontoInicial.ident, marcacao);
+        pontoSelecionado.identUsuario, pontoSelecionado.ident, marcacao);
 
-    pontoInicial.marcacoes.add(marcacaoPontoModel);
+    pontoSelecionado.marcacoes.add(marcacaoPontoModel);
 
     ordernarMarcacoes();
     definirTempoTrabalhado();
 
-    _repository.incluirPonto(pontoInicial);
+    pontoSelecionado.identUsuario = usuarioAtual.email;
+    marcacaoPontoModel.identUsuario = usuarioAtual.email;
+
+    _repository.incluirPonto(pontoSelecionado);
     _repository.incluirMarcacao(marcacaoPontoModel);
 
-    _pontoAtual.sink.add(pontoInicial);
+    _pontoAtual.sink.add(pontoSelecionado);
   }
 
   void definirTempoTrabalhado() {
-    var chunk = ListUtils.chunk(pontoInicial.marcacoes, 2);
+    var chunk = ListUtils.chunk(pontoSelecionado.marcacoes, 2);
 
     List<EntradaSaidaModel> marcacoesAgrupadas = [];
     for (List lista in chunk) {
@@ -99,28 +115,30 @@ class PontoBloc extends BlocBase {
 
       marcacoesAgrupadas.add(esm);
     }
-    print(marcacoesAgrupadas);
-    pontoInicial.horasTrabalhadas = DateTime(pontoInicial.dataReferencia.year,
-        pontoInicial.dataReferencia.month, pontoInicial.dataReferencia.day);
+
+    pontoSelecionado.horasTrabalhadas = DateTime(
+        pontoSelecionado.dataReferencia.year,
+        pontoSelecionado.dataReferencia.month,
+        pontoSelecionado.dataReferencia.day);
     for (EntradaSaidaModel esm in marcacoesAgrupadas) {
-      pontoInicial.horasTrabalhadas = pontoInicial.horasTrabalhadas
+      pontoSelecionado.horasTrabalhadas = pontoSelecionado.horasTrabalhadas
           .add(Duration(minutes: esm.tempoTrabalhado));
     }
 
     Duration tempoTrabalho = Duration(
-        hours: pontoInicial.horasTrabalhadas.hour,
-        minutes: pontoInicial.horasTrabalhadas.minute);
+        hours: pontoSelecionado.horasTrabalhadas.hour,
+        minutes: pontoSelecionado.horasTrabalhadas.minute);
 
     double percTotal = 100.0;
-    double minTotalJornada = pontoInicial.horasJornada.inMinutes.toDouble();
+    double minTotalJornada = pontoSelecionado.horasJornada.inMinutes.toDouble();
     double minTrabalhados = tempoTrabalho.inMinutes.toDouble();
 
-    pontoInicial.percentualJornada =
+    pontoSelecionado.percentualJornada =
         ((percTotal / minTotalJornada) * minTrabalhados).toInt();
   }
 
   void ordernarMarcacoes() {
-    pontoInicial.marcacoes.sort((a, b) => a.marcacao.compareTo(b.marcacao));
+    pontoSelecionado.marcacoes.sort((a, b) => a.marcacao.compareTo(b.marcacao));
   }
 
   @override
@@ -131,9 +149,9 @@ class PontoBloc extends BlocBase {
 
   void removerMarcacao(MarcacaoPontoModel marcacao) {
     _repository.removerMarcacao(marcacao);
-    pontoInicial.marcacoes.remove(marcacao);
+    pontoSelecionado.marcacoes.remove(marcacao);
     ordernarMarcacoes();
     definirTempoTrabalhado();
-    _pontoAtual.sink.add(pontoInicial);
+    _pontoAtual.sink.add(pontoSelecionado);
   }
 }

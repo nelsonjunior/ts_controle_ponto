@@ -28,8 +28,6 @@ class PontoModel {
     this.ident = document.data['ident'];
     this.identUsuario = document.data['identUsuario'];
 
-    print('dataReferencia ${document.documentID}');
-
     this.dataReferencia =
         formatarDataHash.parse(document.documentID);
 
@@ -57,6 +55,6 @@ class PontoModel {
 
   @override
   String toString() {
-    return "Data Referência: $dataReferencia, horasTrabalhadas: $horasTrabalhadas, jornada: $horasJornada, percentualJornal: $percentualJornada";
+    return "Ident $ident IDUsuario $identUsuario Data Referência: $dataReferencia, horasTrabalhadas: $horasTrabalhadas, jornada: $horasJornada, percentualJornal: $percentualJornada";
   }
 }

@@ -36,7 +36,7 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
     lastGoalCompleted = widget.pontoModel.percentualJornada.toDouble() / 100;
 
     _radialProgressAnimationController =
-        AnimationController(vsync: this, duration: Duration(seconds: 2));
+        AnimationController(vsync: this, duration: Duration(seconds: 1));
 
     _progressAnimation = Tween(begin: lastGoalCompleted * 360.0, end: 360.0)
         .animate(CurvedAnimation(
@@ -59,7 +59,6 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
 
   @override
   Widget build(BuildContext context) {
-
     if (_radialProgressAnimationController.isCompleted) {
       double percJornadaAtual =
           widget.pontoModel.percentualJornada.toDouble() / 100;
@@ -70,27 +69,25 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
         lastGoalCompleted = 0.0;
         pontoAtual = widget.pontoModel;
         iniciarAnimacao = true;
-
       } else if (lastGoalCompleted != percJornadaAtual) {
         iniciarAnimacao = true;
       }
 
-      if(iniciarAnimacao){
-        
+      if (iniciarAnimacao) {
         _progressAnimation = Tween(begin: lastGoalCompleted * 360.0, end: 360.0)
-          .animate(CurvedAnimation(
-              parent: _radialProgressAnimationController,
-              curve: Curves.decelerate))
-            ..addStatusListener((AnimationStatus status){
-              if(status == AnimationStatus.completed){
-                lastGoalCompleted = percJornadaAtual;
-              }
-            })
-            ..addListener(() {
-              setState(() {
-                progressDegress = percJornadaAtual * _progressAnimation.value;
+            .animate(CurvedAnimation(
+                parent: _radialProgressAnimationController,
+                curve: Curves.easeInOut))
+              ..addStatusListener((AnimationStatus status) {
+                if (status == AnimationStatus.completed) {
+                  lastGoalCompleted = percJornadaAtual;
+                }
+              })
+              ..addListener(() {
+                setState(() {
+                  progressDegress = percJornadaAtual * _progressAnimation.value;
+                });
               });
-            });
 
         _radialProgressAnimationController.reset();
         _radialProgressAnimationController.forward();
@@ -134,14 +131,37 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
                             fontSize: 40.0, fontWeight: FontWeight.bold),
                       );
                     } else {
-                      return Container();
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
                     }
                   }),
-              Text(
-                'Jornada 8h/dia',
-                style: TextStyle(
-                    fontSize: 14.0, color: Colors.blue, letterSpacing: 1.5),
-              ),
+              StreamBuilder<PontoModel>(
+                  stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
+                  builder: (context, snapshot) {
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.none:
+                      case ConnectionState.waiting:
+                        return Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      default:
+                        if (snapshot.hasData) {
+                          return Text(
+                            'Jornada ${snapshot.data.horasJornada.inHours}h/dia',
+                            style: TextStyle(
+                                fontSize: 14.0,
+                                color: Colors.blue,
+                                letterSpacing: 1.5),
+                          );
+                        } else {
+                          return Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        break;
+                    }
+                  }),
             ],
           ),
         ),
@@ -167,6 +187,23 @@ class RadialPainter extends CustomPainter {
     Offset center = Offset(size.width / 2, size.height / 2);
     canvas.drawCircle(center, size.width / 2, paint);
 
+    if(progressInDegrees > 360){
+      Paint extraProgressPaint = Paint()
+      ..shader = LinearGradient(
+              colors: [Colors.redAccent, Colors.amber, Colors.orangeAccent])
+          .createShader(Rect.fromCircle(center: center, radius: size.width / 2))
+      ..strokeCap = StrokeCap.butt
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10.0;
+
+    canvas.drawArc(
+        Rect.fromCircle(center: center, radius: size.width / 1.85),
+        math.radians(-90),
+        math.radians(progressInDegrees - 360),
+        false,
+        extraProgressPaint);
+    }
+
     Paint progressPaint = Paint()
       ..shader = LinearGradient(
               colors: [Colors.blue, Colors.deepPurple, Colors.purpleAccent])
@@ -181,6 +218,7 @@ class RadialPainter extends CustomPainter {
         math.radians(progressInDegrees),
         false,
         progressPaint);
+
   }
 
   @override

@@ -2,14 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class UsuarioModel {
-  String id;
   String nome;
   String nomeCompleto;
   String email;
   String fotoURL;
 
   UsuarioModel.from(GoogleSignInAccount account) {
-    this.id = account.email;
     this.nome =
         account.displayName.substring(0, account.displayName.indexOf(' '));
     this.nomeCompleto = account.displayName;
@@ -18,7 +16,6 @@ class UsuarioModel {
   }
 
   UsuarioModel.fromDocument(DocumentSnapshot doc) {
-    this.id = doc.data['id'];
     this.nome = doc.data['nome'];
     this.nomeCompleto = doc.data['nomeCompleto'];
     this.email = doc.data['email'];
@@ -27,11 +24,15 @@ class UsuarioModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': this.id,
       'nome': this.nome,
       'nomeCompleto': this.nomeCompleto,
       'email': this.email,
       'fotoURL': this.fotoURL,
     };
+  }
+
+  @override
+  String toString() {
+    return 'Nome $nome Email $email';
   }
 }

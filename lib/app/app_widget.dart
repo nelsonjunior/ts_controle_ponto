@@ -1,16 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:ts_controle_ponto/app/screens/drawer/drawer_screen.dart';
 
 class AppWidget extends StatelessWidget {
+  
+  static FirebaseAnalytics analytics = FirebaseAnalytics();
+
+  static FirebaseAnalyticsObserver observer =
+    FirebaseAnalyticsObserver(analytics: analytics);
+
   @override
   Widget build(BuildContext context) {
-    Firestore.instance
-        .collection("iosNovo")
-        .document("Teste")
-        .setData({"teste": "testevalor"});
 
     Intl.defaultLocale = 'pt_BR';
     initializeDateFormatting();
@@ -21,6 +24,7 @@ class AppWidget extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      navigatorObservers: <NavigatorObserver>[observer],
       home: DrawerScreen(),
     );
   }

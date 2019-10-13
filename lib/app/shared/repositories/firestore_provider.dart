@@ -10,7 +10,7 @@ class FirestoreProvider {
   Future<void> incluirUsuario(UsuarioModel usuario) async {
     return _firestore
         .collection("usuarios")
-        .document(usuario.id)
+        .document(usuario.email)
         .setData(usuario.toMap());
   }
 
@@ -24,6 +24,7 @@ class FirestoreProvider {
   }
 
   Future<PontoModel> incluirPonto(PontoModel ponto) async {
+
     _firestore
         .collection("usuarios")
         .document(ponto.identUsuario)
@@ -35,19 +36,27 @@ class FirestoreProvider {
 
   Future<PontoModel> recuperarPonto(
       String idUsuario, DateTime dataReferencia) async {
+
     DocumentSnapshot document = await _firestore
         .collection("usuarios")
         .document(idUsuario)
         .collection("pontos")
         .document(formatarDataHash.format(dataReferencia))
         .get();
+
     if (document.data != null) {
-      return new PontoModel.fromDocument(document);
+      PontoModel pontoModel = new PontoModel.fromDocument(document);
+
+      pontoModel.marcacoes =
+          await recuperarMarcacoes(idUsuario, pontoModel.ident);
+
+      return pontoModel;
     }
     return null;
   }
 
-  Future<MarcacaoPontoModel> incluirMarcacao(MarcacaoPontoModel marcacao) async {
+  Future<MarcacaoPontoModel> incluirMarcacao(
+      MarcacaoPontoModel marcacao) async {
     _firestore
         .collection("usuarios")
         .document(marcacao.identUsuario)
@@ -70,11 +79,11 @@ class FirestoreProvider {
         .delete();
   }
 
-  Future<List<MarcacaoPontoModel>> recuperarMarcacoes(String identUsuario, String identPonto) async {
-
+  Future<List<MarcacaoPontoModel>> recuperarMarcacoes(
+      String identUsuario, String identPonto) async {
     List<MarcacaoPontoModel> marcacoes = [];
 
-    QuerySnapshot  snapshots = await _firestore
+    QuerySnapshot snapshots = await _firestore
         .collection("usuarios")
         .document(identUsuario)
         .collection("pontos")
@@ -82,9 +91,11 @@ class FirestoreProvider {
         .collection("marcacoes")
         .getDocuments();
 
-    if(snapshots != null){
-      marcacoes = snapshots.documents.map((doc) => MarcacaoPontoModel.fromDocument(doc)).toList();
-    }   
+    if (snapshots != null) {
+      marcacoes = snapshots.documents
+          .map((doc) => MarcacaoPontoModel.fromDocument(doc))
+          .toList();
+    }
     return marcacoes;
   }
 }
