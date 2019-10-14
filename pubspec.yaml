@@ -33,11 +33,27 @@ dependencies:
   firebase_auth: ^0.14.0+5
   provider: ^2.0.0
   slide_popup_dialog: ^0.0.2
+  flutter_launcher_icons: ^0.7.3
+  flutter_native_splash: ^0.1.8+4
+
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
+# Comando para atualizar splash flutter pub pub run flutter_native_splash:create
+flutter_native_splash:
+  image: assets/images/splash.png
+  color: "191C8D"
+
+# Comando apra criar icones flutter pub run flutter_launcher_icons:main
+flutter_icons:
+#  image_path: "assets/images/icon-128x128.png"
+  image_path_android: "assets/images/icon-1024x1024.png"
+  image_path_ios: "assets/images/icon-1024x1024.png"
+  android: true 
+  ios: true 
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
