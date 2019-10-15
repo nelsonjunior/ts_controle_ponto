@@ -37,6 +37,8 @@ class FirestoreProvider {
   Future<PontoModel> recuperarPonto(
       String idUsuario, DateTime dataReferencia) async {
 
+    print('RECUPERANDO PONTO $idUsuario - $dataReferencia');
+
     DocumentSnapshot document = await _firestore
         .collection("usuarios")
         .document(idUsuario)

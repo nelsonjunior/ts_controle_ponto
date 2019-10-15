@@ -7,7 +7,6 @@ import '../../../app_bloc.dart';
 import '../../../app_module.dart';
 import 'fundo_barra_principal.dart';
 
-
 class BarraPrincipal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -18,9 +17,8 @@ class BarraPrincipal extends StatelessWidget {
             stream: AppModule.to.bloc<AppBloc>().dataStream,
             initialData: DateTime.now(),
             builder: (context, snapshot) {
-              
               HomeModule.to.bloc<PontoBloc>().obterPonto(snapshot.data);
-              
+
               return SafeArea(
                 child: Padding(
                   padding: EdgeInsets.only(top: 20.0),

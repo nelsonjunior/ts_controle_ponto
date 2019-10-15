@@ -182,13 +182,25 @@ class _HomeScreenState extends State<HomeScreen>
                       stream: AppModule.to.bloc<LoginBloc>().googleAccount,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          return IconButton(
-                              icon: AnimatedIcon(
-                                  icon: AnimatedIcons.add_event,
-                                  color: Colors.white,
-                                  progress: _iconAnimationController.view),
-                              onPressed: () {
-                                onIconPressed();
+                          return StreamBuilder<PontoModel>(
+                              stream:
+                                  HomeModule.to.bloc<PontoBloc>().pontoStream,
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData ||
+                                    HomeModule.to.bloc<PontoBloc>().loading) {
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                } else {
+                                  return IconButton(
+                                      icon: AnimatedIcon(
+                                          icon: AnimatedIcons.add_event,
+                                          color: Colors.white,
+                                          progress:
+                                              _iconAnimationController.view),
+                                      onPressed: () {
+                                        onIconPressed();
+                                      });
+                                }
                               });
                         } else {
                           return IconButton(
@@ -269,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen>
               child: StreamBuilder<PontoModel>(
                 stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
                 builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  if (snapshot.hasData) {
+                  if (!HomeModule.to.bloc<PontoBloc>().loading) {
                     return GridView.builder(
                       padding: EdgeInsets.all(16.0),
                       scrollDirection: Axis.vertical,

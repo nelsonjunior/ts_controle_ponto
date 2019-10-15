@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1018918107464-6csel13e8ij9sjuk0tgrlac4pk73ksq3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.com.artsofttec.ts_controle_ponto",
+            "certificate_hash": "df12ef9401ff09f140d15b82ba73e645d83fe2ad"
+          }
+        },
+        {
           "client_id": "1018918107464-vu5mn8hvdja4glk24fg37mqo4de0f79k.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -38,6 +46,13 @@
             {
               "client_id": "1018918107464-j8k6bdmp20ln7las6i25r8q3g3uqa3h2.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1018918107464-htm5o3ika3k2at1ihr0fubvndaa9tbsq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "br.com.artsofttec.tsControlePonto"
+              }
             }
           ]
         }

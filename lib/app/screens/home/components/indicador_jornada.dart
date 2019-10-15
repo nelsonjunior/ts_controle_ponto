@@ -102,68 +102,51 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
         child: AnimatedOpacity(
           opacity: 1.0,
           duration: fadeInDuration,
-          child: Column(
-            children: <Widget>[
-              Text(
-                'HORAS',
-                style: TextStyle(fontSize: 24.0, letterSpacing: 1.5),
-              ),
-              SizedBox(
-                height: 4.0,
-              ),
-              Container(
-                height: 5.0,
-                width: 80.0,
-                decoration: BoxDecoration(
-                    color: corPrincipal1,
-                    borderRadius: BorderRadius.all(Radius.circular(4.0))),
-              ),
-              SizedBox(
-                height: 10.0,
-              ),
-              StreamBuilder<PontoModel>(
-                  stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Text(
+          child: StreamBuilder<PontoModel>(
+              stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData ||
+                    HomeModule.to.bloc<PontoBloc>().loading) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else {
+                  return Column(
+                    children: <Widget>[
+                      Text(
+                        'HORAS',
+                        style: TextStyle(fontSize: 24.0, letterSpacing: 1.5),
+                      ),
+                      SizedBox(
+                        height: 4.0,
+                      ),
+                      Container(
+                        height: 5.0,
+                        width: 80.0,
+                        decoration: BoxDecoration(
+                            color: corPrincipal1,
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(4.0))),
+                      ),
+                      SizedBox(
+                        height: 10.0,
+                      ),
+                      Text(
                         formatarHora.format(snapshot.data.horasTrabalhadas),
                         style: TextStyle(
                             fontSize: 40.0, fontWeight: FontWeight.bold),
-                      );
-                    } else {
-                      return Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                  }),
-              StreamBuilder<PontoModel>(
-                  stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
-                  builder: (context, snapshot) {
-                    switch (snapshot.connectionState) {
-                      case ConnectionState.none:
-                      case ConnectionState.waiting:
-                        return Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      default:
-                        if (snapshot.hasData) {
-                          return Text(
-                            'Jornada ${snapshot.data.horasJornada.inHours}h/dia',
-                            style: TextStyle(
-                                fontSize: 14.0,
-                                color: Colors.blue,
-                                letterSpacing: 1.5),
-                          );
-                        } else {
-                          return Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        break;
-                    }
-                  }),
-            ],
-          ),
+                      ),
+                      Text(
+                        'Jornada ${snapshot.data.horasJornada.inHours}h/dia',
+                        style: TextStyle(
+                            fontSize: 14.0,
+                            color: Colors.blue,
+                            letterSpacing: 1.5),
+                      ),
+                    ],
+                  );
+                }
+              }),
         ),
       ),
       painter: RadialPainter(progressDegress),
@@ -187,21 +170,23 @@ class RadialPainter extends CustomPainter {
     Offset center = Offset(size.width / 2, size.height / 2);
     canvas.drawCircle(center, size.width / 2, paint);
 
-    if(progressInDegrees > 360){
+    if (progressInDegrees > 360) {
       Paint extraProgressPaint = Paint()
-      ..shader = LinearGradient(
-              colors: [Colors.redAccent, Colors.amber, Colors.orangeAccent])
-          .createShader(Rect.fromCircle(center: center, radius: size.width / 2))
-      ..strokeCap = StrokeCap.butt
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10.0;
+        ..shader = LinearGradient(colors: [
+          Colors.redAccent,
+          Colors.amber,
+          Colors.orangeAccent
+        ]).createShader(Rect.fromCircle(center: center, radius: size.width / 2))
+        ..strokeCap = StrokeCap.butt
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 10.0;
 
-    canvas.drawArc(
-        Rect.fromCircle(center: center, radius: size.width / 1.85),
-        math.radians(-90),
-        math.radians(progressInDegrees - 360),
-        false,
-        extraProgressPaint);
+      canvas.drawArc(
+          Rect.fromCircle(center: center, radius: size.width / 1.85),
+          math.radians(-90),
+          math.radians(progressInDegrees - 360),
+          false,
+          extraProgressPaint);
     }
 
     Paint progressPaint = Paint()
@@ -218,7 +203,6 @@ class RadialPainter extends CustomPainter {
         math.radians(progressInDegrees),
         false,
         progressPaint);
-
   }
 
   @override

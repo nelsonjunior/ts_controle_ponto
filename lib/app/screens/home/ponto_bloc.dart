@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:bloc_pattern/bloc_pattern.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:ts_controle_ponto/app/app_bloc.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
@@ -44,9 +45,7 @@ class PontoBloc extends BlocBase {
 
     if (pontoSelecionado != null &&
         pontoSelecionado.dataReferencia.compareTo(dataReferencia) == 0) {
-      
       loading = false;
-
     } else if (usuarioAtual != null) {
       pontoSelecionado = PontoModel.empty(dataReferencia);
       pontoSelecionado.identUsuario = usuarioAtual.email;
