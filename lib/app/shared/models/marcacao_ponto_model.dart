@@ -12,7 +12,7 @@ class MarcacaoPontoModel {
   MarcacaoPontoModel(this.identUsuario, this.identPonto, this.marcacao);
 
   MarcacaoPontoModel.fromDocument(DocumentSnapshot document) {
-    this.ident = document.data['ident'];
+    this.ident = document.documentID;
     this.identUsuario = document.data['identUsuario'];
     this.identPonto = document.data['identPonto'];
     this.descricao = document.data['descricao'];
@@ -22,7 +22,6 @@ class MarcacaoPontoModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'ident': formatarHora.format(marcacao),
       'identUsuario': this.identUsuario,
       'identPonto': this.identPonto,
       'descricao': this.descricao,

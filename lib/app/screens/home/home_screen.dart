@@ -45,13 +45,18 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  void onIconPressed() {
+  void _registrarMarcacao() {
     if (!animationStatus) {
       _iconAnimationController.forward();
 
-      showInfoFlushbar(_scaffoldKey.currentContext);
+      var retorno = HomeModule.to.bloc<PontoBloc>().registrarMarcacao();
 
-      HomeModule.to.bloc<PontoBloc>().registrarMarcacao();
+      _exibirAlerta(
+          _scaffoldKey.currentContext,
+          retorno
+              ? "Marcação salva com sucesso"
+              : "Marcação já registrada ou inválida",
+          retorno);
 
       Future.delayed(animationDurationPadrao).then((_) {
         _iconAnimationController.reverse();
@@ -59,25 +64,61 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  void showInfoFlushbar(BuildContext context) {
+  void _exibirAlerta(BuildContext context, String texto, bool isValido) {
     Flushbar(
-        message: "Marcação Registrada!",
+        message: "$texto!",
         icon: Icon(
           Icons.info_outline,
           size: 28.0,
-          color: corPrincipal1,
+          color: isValido ? corPrincipal1 : Colors.white,
         ),
         animationDuration: animationDurationPadrao,
         duration: Duration(seconds: 2),
         margin: EdgeInsets.only(left: 10.0, right: 10.0, bottom: 100.0),
         borderRadius: 8,
         backgroundGradient: LinearGradient(
-          colors: [corPrincipal, corPrincipal1],
+          colors: isValido
+              ? [corPrincipal, corPrincipal1]
+              : [Colors.red, Colors.redAccent],
         ))
       ..show(context);
   }
 
-  void _alterarMarcacao(MarcacaoPontoModel marcacao) {
+  Future<TimeOfDay> _alterarMarcacao(MarcacaoPontoModel marcacao) {
+    Future<TimeOfDay> picked = showTimePicker(
+        context: _scaffoldKey.currentContext,
+        initialTime: TimeOfDay.fromDateTime(new DateTime(
+            marcacao.marcacao.year,
+            marcacao.marcacao.month,
+            marcacao.marcacao.day,
+            marcacao.marcacao.hour,
+            marcacao.marcacao.minute)));
+
+    picked.then((TimeOfDay time) {
+      if (time != null) {
+        if (HomeModule.to.bloc<PontoBloc>().verificarSeExisteMarcacao(time)) {
+          _exibirAlerta(_scaffoldKey.currentContext,
+              "Marcação já registrada ou inválida", false);
+        } else {
+          marcacao.marcacao = DateTime(
+              marcacao.marcacao.year,
+              marcacao.marcacao.month,
+              marcacao.marcacao.day,
+              time.hour,
+              time.minute);
+
+          HomeModule.to.bloc<PontoBloc>().alterarMarcacao(marcacao);
+
+          _exibirAlerta(
+              _scaffoldKey.currentContext, "Marcação salva com sucesso", true);
+        }
+      }
+    });
+
+    return picked;
+  }
+
+  void _detalharMarcacao(MarcacaoPontoModel marcacao) {
     showSlideDialog(
       context: _scaffoldKey.currentContext,
       backgroundColor: Colors.white,
@@ -109,23 +150,36 @@ class _HomeScreenState extends State<HomeScreen>
                     height: 20.0,
                   ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      Text(
-                        "Horário:",
-                        style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87),
+                      Icon(
+                        Icons.timer,
+                        color: Colors.blue,
+                        size: 40.0,
                       ),
                       Padding(
-                        padding: EdgeInsets.only(left: 10.0),
+                        padding: EdgeInsets.only(left: 15.0),
                         child: Text(
-                          "${marcacao.tipo ?? 'Entrada'} às ${formatarHora.format(marcacao.marcacao)}",
+                          formatarHora.format(marcacao.marcacao),
                           style: TextStyle(
                               color: Colors.blue,
                               fontWeight: FontWeight.bold,
-                              fontSize: 22.0),
+                              fontSize: 40.0),
                         ),
+                      ),
+                      Spacer(),
+                      MaterialButton(
+                        child: Text(
+                          "Alterar",
+                          style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18.0),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(_scaffoldKey.currentContext);
+                          _alterarMarcacao(marcacao);
+                        },
                       )
                     ],
                   ),
@@ -191,15 +245,29 @@ class _HomeScreenState extends State<HomeScreen>
                                   return Center(
                                       child: CircularProgressIndicator());
                                 } else {
-                                  return IconButton(
-                                      icon: AnimatedIcon(
-                                          icon: AnimatedIcons.add_event,
-                                          color: Colors.white,
-                                          progress:
-                                              _iconAnimationController.view),
-                                      onPressed: () {
-                                        onIconPressed();
-                                      });
+                                  return GestureDetector(
+                                    onLongPress: () {
+                                      if (!animationStatus) {
+                                        _iconAnimationController.forward();
+                                        _alterarMarcacao(new MarcacaoPontoModel(
+                                                snapshot.data.identUsuario,
+                                                snapshot.data.ident,
+                                                DateTime.now()))
+                                            .whenComplete(() {
+                                          _iconAnimationController.reverse();
+                                        });
+                                      }
+                                    },
+                                    child: IconButton(
+                                        icon: AnimatedIcon(
+                                            icon: AnimatedIcons.add_event,
+                                            color: Colors.white,
+                                            progress:
+                                                _iconAnimationController.view),
+                                        onPressed: () {
+                                          _registrarMarcacao();
+                                        }),
+                                  );
                                 }
                               });
                         } else {
@@ -299,19 +367,25 @@ class _HomeScreenState extends State<HomeScreen>
                               child: CircularProgressIndicator(),
                             );
                           default:
-                            return MaterialButton(
-                              padding: EdgeInsets.all(0.0),
-                              onPressed: () {
+                            return GestureDetector(
+                              onLongPress: () {
                                 _alterarMarcacao(
                                     snapshot.data.marcacoes[index]);
                               },
-                              child: Text(
-                                formatarHora.format(
-                                    snapshot.data.marcacoes[index].marcacao),
-                                style: TextStyle(
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20.0),
+                              child: MaterialButton(
+                                padding: EdgeInsets.all(0.0),
+                                onPressed: () {
+                                  _detalharMarcacao(
+                                      snapshot.data.marcacoes[index]);
+                                },
+                                child: Text(
+                                  formatarHora.format(
+                                      snapshot.data.marcacoes[index].marcacao),
+                                  style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20.0),
+                                ),
                               ),
                             );
                         }

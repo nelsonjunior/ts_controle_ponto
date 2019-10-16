@@ -25,6 +25,9 @@ class Repository {
   Future<void> removerMarcacao(MarcacaoPontoModel marcacao) =>
       _firestoreProvider.removerMarcacao(marcacao);
 
+  Future<void> alterarMarcacao(MarcacaoPontoModel marcacao) =>
+      _firestoreProvider.alterarMarcacao(marcacao);
+
   Future<List<MarcacaoPontoModel>> recuperarMarcacoes(
           String identUsuario, String identPonto) =>
       _firestoreProvider.recuperarMarcacoes(identUsuario, identPonto);

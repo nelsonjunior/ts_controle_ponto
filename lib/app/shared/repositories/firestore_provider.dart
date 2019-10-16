@@ -65,8 +65,9 @@ class FirestoreProvider {
         .collection("pontos")
         .document(marcacao.identPonto)
         .collection("marcacoes")
-        .document(formatarHora.format(marcacao.marcacao))
-        .setData(marcacao.toMap());
+        .add(marcacao.toMap()).then((DocumentReference doc){
+          marcacao.ident = doc.documentID;
+        });
     return marcacao;
   }
 
@@ -77,8 +78,19 @@ class FirestoreProvider {
         .collection("pontos")
         .document(marcacao.identPonto)
         .collection("marcacoes")
-        .document(formatarHora.format(marcacao.marcacao))
+        .document(marcacao.ident)
         .delete();
+  }
+
+  Future<void> alterarMarcacao(MarcacaoPontoModel marcacao) async {
+    _firestore
+        .collection("usuarios")
+        .document(marcacao.identUsuario)
+        .collection("pontos")
+        .document(marcacao.identPonto)
+        .collection("marcacoes")
+        .document(marcacao.ident)
+        .setData(marcacao.toMap());
   }
 
   Future<List<MarcacaoPontoModel>> recuperarMarcacoes(

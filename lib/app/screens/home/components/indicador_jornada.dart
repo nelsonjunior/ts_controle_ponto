@@ -98,7 +98,7 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
       child: Container(
         height: 200.0,
         width: 200.0,
-        padding: EdgeInsets.symmetric(vertical: 40.0),
+        padding: EdgeInsets.symmetric(vertical: 30.0),
         child: AnimatedOpacity(
           opacity: 1.0,
           duration: fadeInDuration,
@@ -136,12 +136,22 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
                         style: TextStyle(
                             fontSize: 40.0, fontWeight: FontWeight.bold),
                       ),
-                      Text(
-                        'Jornada ${snapshot.data.horasJornada.inHours}h/dia',
-                        style: TextStyle(
-                            fontSize: 14.0,
-                            color: Colors.blue,
-                            letterSpacing: 1.5),
+                      SizedBox(
+                        height: 5.0,
+                      ),
+                      Flexible(
+                        child: Text(
+                          snapshot.data.jornadaCompleta
+                              ? 'Jornada ${snapshot.data.horasJornada.inHours}h/dia\nconcluída'
+                              : 'Saída estimada \n às ${formatarHora.format(snapshot.data.saidaEstimada)}',
+                          textAlign: TextAlign.center,
+                          softWrap: true,
+                          style: TextStyle(
+                              fontSize: 14.0,
+                              color: Colors.blue,
+                              letterSpacing: 1.5,
+                              height: 1.3),
+                        ),
                       ),
                     ],
                   );

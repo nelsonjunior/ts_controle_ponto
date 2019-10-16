@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:bloc_pattern/bloc_pattern.dart';
+import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:ts_controle_ponto/app/app_bloc.dart';
@@ -41,6 +42,9 @@ class PontoBloc extends BlocBase {
   void obterPonto(DateTime dataReferencia) {
     loading = true;
 
+    dataReferencia =
+        DateTime(dataReferencia.year, dataReferencia.month, dataReferencia.day);
+
     UsuarioModel usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
 
     if (pontoSelecionado != null &&
@@ -70,7 +74,7 @@ class PontoBloc extends BlocBase {
     }
   }
 
-  void registrarMarcacao() {
+  bool registrarMarcacao() {
     print('REGISTRANDO MARCAÇÃO');
 
     UsuarioModel usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
@@ -87,6 +91,10 @@ class PontoBloc extends BlocBase {
     MarcacaoPontoModel marcacaoPontoModel = MarcacaoPontoModel(
         pontoSelecionado.identUsuario, pontoSelecionado.ident, marcacao);
 
+    if (!_validarMarcacao(marcacaoPontoModel)) {
+      return false;
+    }
+
     pontoSelecionado.marcacoes.add(marcacaoPontoModel);
 
     ordernarMarcacoes();
@@ -99,6 +107,8 @@ class PontoBloc extends BlocBase {
     _repository.incluirMarcacao(marcacaoPontoModel);
 
     _pontoAtual.sink.add(pontoSelecionado);
+
+    return true;
   }
 
   void definirTempoTrabalhado() {
@@ -152,5 +162,44 @@ class PontoBloc extends BlocBase {
     ordernarMarcacoes();
     definirTempoTrabalhado();
     _pontoAtual.sink.add(pontoSelecionado);
+  }
+
+  void alterarMarcacao(MarcacaoPontoModel marcacao) {
+    pontoSelecionado.marcacoes.remove(marcacao);
+    _repository.alterarMarcacao(marcacao);
+    pontoSelecionado.marcacoes.add(marcacao);
+    ordernarMarcacoes();
+    definirTempoTrabalhado();
+
+    _repository.incluirPonto(pontoSelecionado);
+    _pontoAtual.sink.add(pontoSelecionado);
+  }
+
+  bool _validarMarcacao(MarcacaoPontoModel marcacao) {
+    bool retorno = true;
+
+    if (pontoSelecionado != null &&
+        pontoSelecionado.marcacoes != null &&
+        pontoSelecionado.marcacoes.indexWhere((m) =>
+                (m.marcacao.hour == marcacao.marcacao.hour &&
+                    m.marcacao.minute == marcacao.marcacao.minute)) >
+            0) {
+      retorno = false;
+    }
+    return retorno;
+  }
+
+  bool verificarSeExisteMarcacao(TimeOfDay horario) {
+    bool retorno = false;
+
+    if (pontoSelecionado != null &&
+        pontoSelecionado.marcacoes != null &&
+        pontoSelecionado.marcacoes.indexWhere((m) =>
+                (m.marcacao.hour == horario.hour &&
+                    m.marcacao.minute == horario.minute)) >=
+            0) {
+      retorno = true;
+    }
+    return retorno;
   }
 }

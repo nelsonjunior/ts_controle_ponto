@@ -14,6 +14,28 @@ class PontoModel {
 
   PontoModel(this.dataReferencia, {this.marcacoes, this.horasJornada});
 
+  bool get jornadaCompleta =>
+      Duration(hours: horasTrabalhadas.hour, minutes: horasTrabalhadas.minute)
+          .compareTo(horasJornada) >
+      0;
+
+  DateTime get horasRestantes => DateTime(
+          this.horasTrabalhadas.year,
+          this.horasTrabalhadas.month,
+          this.horasTrabalhadas.day,
+          horasJornada.inHours)
+      .subtract(Duration(
+          hours: horasTrabalhadas.hour, minutes: horasTrabalhadas.minute));
+
+  DateTime get saidaEstimada {
+    DateTime estimativa = DateTime.now();
+    if (marcacoes != null && marcacoes.isNotEmpty) {
+      estimativa = marcacoes.last.marcacao;
+    }
+    DateTime hr = horasRestantes;
+    return estimativa.add(Duration(hours: hr.hour, minutes: hr.minute));
+  }
+
   PontoModel.empty(this.dataReferencia) {
     this.ident = formatarDataHash.format(this.dataReferencia);
     this.dataReferencia = this.dataReferencia;
@@ -28,8 +50,7 @@ class PontoModel {
     this.ident = document.data['ident'];
     this.identUsuario = document.data['identUsuario'];
 
-    this.dataReferencia =
-        formatarDataHash.parse(document.documentID);
+    this.dataReferencia = formatarDataHash.parse(document.documentID);
 
     DateTime horasTrab = formatarHora.parse(document.data['horasTrabalhadas']);
 

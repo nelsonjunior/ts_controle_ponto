@@ -7,8 +7,7 @@ import 'package:ts_controle_ponto/app/shared/models/usuario_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/repository.dart';
 
 class LoginBloc extends BlocBase {
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-      scopes: ['email', 'https://www.googleapis.com/auth/contacts.readonly']);
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
 
   UsuarioModel _usuarioModel;
 
