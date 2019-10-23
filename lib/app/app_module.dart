@@ -2,6 +2,7 @@ import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:flutter/widgets.dart';
 import 'package:ts_controle_ponto/app/app_bloc.dart';
 import 'package:ts_controle_ponto/app/app_widget.dart';
+import 'package:ts_controle_ponto/app/shared/blocs/configuracao_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
 
 class AppModule extends ModuleWidget {
@@ -9,6 +10,7 @@ class AppModule extends ModuleWidget {
   List<Bloc<BlocBase>> get blocs => [
         Bloc((i) => AppBloc()),
         Bloc((i) => LoginBloc()),
+        Bloc((i) => ConfiguracaoBloc()),
       ];
 
   @override

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ts_controle_ponto/app/shared/models/configuracao_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/usuario_model.dart';
@@ -24,7 +25,6 @@ class FirestoreProvider {
   }
 
   Future<PontoModel> incluirPonto(PontoModel ponto) async {
-
     _firestore
         .collection("usuarios")
         .document(ponto.identUsuario)
@@ -36,9 +36,6 @@ class FirestoreProvider {
 
   Future<PontoModel> recuperarPonto(
       String idUsuario, DateTime dataReferencia) async {
-
-    print('RECUPERANDO PONTO $idUsuario - $dataReferencia');
-
     DocumentSnapshot document = await _firestore
         .collection("usuarios")
         .document(idUsuario)
@@ -65,9 +62,10 @@ class FirestoreProvider {
         .collection("pontos")
         .document(marcacao.identPonto)
         .collection("marcacoes")
-        .add(marcacao.toMap()).then((DocumentReference doc){
-          marcacao.ident = doc.documentID;
-        });
+        .add(marcacao.toMap())
+        .then((DocumentReference doc) {
+      marcacao.ident = doc.documentID;
+    });
     return marcacao;
   }
 
@@ -111,5 +109,19 @@ class FirestoreProvider {
           .toList();
     }
     return marcacoes;
+  }
+
+  Future<void> salvarConfiguracao(ConfiguracaoModel configuracaoModel) {
+    return _firestore
+        .collection("configuracoes")
+        .document(configuracaoModel.identUsuario)
+        .setData(configuracaoModel.toMap());
+  }
+
+  Future<ConfiguracaoModel> recuperarConfiguracao(String idUsuario) async {
+    DocumentSnapshot doc =
+        await _firestore.collection("configuracoes").document(idUsuario).get();
+
+    return ConfiguracaoModel.fromDocument(doc);
   }
 }

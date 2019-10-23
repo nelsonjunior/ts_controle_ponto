@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
+import 'package:ts_controle_ponto/app/screens/configuracao/configuracao_screen.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/components/circular_image.dart';
 import 'package:ts_controle_ponto/app/shared/components/zoom_scaffold.dart';
@@ -98,7 +99,11 @@ class MenuScreen extends StatelessWidget {
             ),
             Spacer(),
             ListTile(
-              onTap: () {},
+              onTap: () {
+                Provider.of<MenuController>(context, listen: true).toggle();
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => ConfiguracaoScreen()));
+              },
               leading: Icon(
                 Icons.settings,
                 color: Colors.white,

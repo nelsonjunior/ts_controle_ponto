@@ -2,7 +2,6 @@ import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:slide_popup_dialog/slide_popup_dialog.dart';
-import 'package:ts_controle_ponto/app/app_bloc.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
 import 'package:ts_controle_ponto/app/screens/home/home_module.dart';
 import 'package:ts_controle_ponto/app/screens/home/ponto_bloc.dart';
@@ -296,23 +295,6 @@ class _HomeScreenState extends State<HomeScreen>
                   Provider.of<MenuController>(context, listen: true).toggle();
                 },
               ),
-              StreamBuilder<bool>(
-                  stream: AppModule.to.bloc<AppBloc>().modoTesteSream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return IconButton(
-                          icon: Icon(
-                            Icons.report_problem,
-                            color:
-                                snapshot.data ? Colors.yellow : Colors.black87,
-                          ),
-                          onPressed: () {
-                            AppModule.to.bloc<AppBloc>().alterarModoTeste();
-                          });
-                    } else {
-                      return Container();
-                    }
-                  }),
             ],
           ),
         ),

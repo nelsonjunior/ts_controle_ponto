@@ -7,13 +7,14 @@ import 'package:rxdart/rxdart.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:ts_controle_ponto/app/app_bloc.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
+import 'package:ts_controle_ponto/app/shared/blocs/configuracao_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/models/entrada_saida_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/usuario_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/repository.dart';
-import 'package:ts_controle_ponto/app/shared/utils/list_utils.dart';
+import 'package:ts_controle_ponto/app/shared/utils/time_of_day_utils.dart';
 
 class PontoBloc extends BlocBase {
   final _repository = Repository();
@@ -51,8 +52,14 @@ class PontoBloc extends BlocBase {
         pontoSelecionado.dataReferencia.compareTo(dataReferencia) == 0) {
       loading = false;
     } else if (usuarioAtual != null) {
+      var configuracaoAtual =
+          AppModule.to.bloc<ConfiguracaoBloc>().configuracaoAtual;
+
       pontoSelecionado = PontoModel.empty(dataReferencia);
       pontoSelecionado.identUsuario = usuarioAtual.email;
+      pontoSelecionado.duracaoJornada = configuracaoAtual.jornadaPadrao;
+      pontoSelecionado.duracaoIntervalo = configuracaoAtual.intervalorPadrao;
+
       _pontoAtual.sink.add(pontoSelecionado);
 
       _repository
@@ -60,7 +67,6 @@ class PontoBloc extends BlocBase {
           .then((PontoModel ponto) {
         if (ponto != null) {
           pontoSelecionado = ponto;
-          ordernarMarcacoes();
           definirTempoTrabalhado();
         } else {
           pontoSelecionado = PontoModel.empty(dataReferencia);
@@ -68,7 +74,8 @@ class PontoBloc extends BlocBase {
         }
 
         loading = false;
-
+        pontoSelecionado.duracaoJornada = configuracaoAtual.jornadaPadrao;
+        pontoSelecionado.duracaoIntervalo = configuracaoAtual.intervalorPadrao;
         _pontoAtual.sink.add(pontoSelecionado);
       });
     }
@@ -97,7 +104,6 @@ class PontoBloc extends BlocBase {
 
     pontoSelecionado.marcacoes.add(marcacaoPontoModel);
 
-    ordernarMarcacoes();
     definirTempoTrabalhado();
 
     pontoSelecionado.identUsuario = usuarioAtual.email;
@@ -112,24 +118,11 @@ class PontoBloc extends BlocBase {
   }
 
   void definirTempoTrabalhado() {
-    var chunk = ListUtils.chunk(pontoSelecionado.marcacoes, 2);
-
-    List<EntradaSaidaModel> marcacoesAgrupadas = [];
-    for (List lista in chunk) {
-      EntradaSaidaModel esm = new EntradaSaidaModel(lista[0].marcacao);
-
-      if (lista.length == 2) {
-        esm.saida = lista[1].marcacao;
-      }
-
-      marcacoesAgrupadas.add(esm);
-    }
-
     pontoSelecionado.horasTrabalhadas = DateTime(
         pontoSelecionado.dataReferencia.year,
         pontoSelecionado.dataReferencia.month,
         pontoSelecionado.dataReferencia.day);
-    for (EntradaSaidaModel esm in marcacoesAgrupadas) {
+    for (EntradaSaidaModel esm in pontoSelecionado.marcacoesAgrupadas) {
       pontoSelecionado.horasTrabalhadas = pontoSelecionado.horasTrabalhadas
           .add(Duration(minutes: esm.tempoTrabalhado));
     }
@@ -139,15 +132,14 @@ class PontoBloc extends BlocBase {
         minutes: pontoSelecionado.horasTrabalhadas.minute);
 
     double percTotal = 100.0;
-    double minTotalJornada = pontoSelecionado.horasJornada.inMinutes.toDouble();
+    double minTotalJornada =
+        TimeOfDayUtils.duration(pontoSelecionado.duracaoJornada)
+            .inMinutes
+            .toDouble();
     double minTrabalhados = tempoTrabalho.inMinutes.toDouble();
 
     pontoSelecionado.percentualJornada =
         ((percTotal / minTotalJornada) * minTrabalhados).toInt();
-  }
-
-  void ordernarMarcacoes() {
-    pontoSelecionado.marcacoes.sort((a, b) => a.marcacao.compareTo(b.marcacao));
   }
 
   @override
@@ -159,7 +151,6 @@ class PontoBloc extends BlocBase {
   void removerMarcacao(MarcacaoPontoModel marcacao) {
     _repository.removerMarcacao(marcacao);
     pontoSelecionado.marcacoes.remove(marcacao);
-    ordernarMarcacoes();
     definirTempoTrabalhado();
     _pontoAtual.sink.add(pontoSelecionado);
   }
@@ -168,7 +159,6 @@ class PontoBloc extends BlocBase {
     pontoSelecionado.marcacoes.remove(marcacao);
     _repository.alterarMarcacao(marcacao);
     pontoSelecionado.marcacoes.add(marcacao);
-    ordernarMarcacoes();
     definirTempoTrabalhado();
 
     _repository.incluirPonto(pontoSelecionado);

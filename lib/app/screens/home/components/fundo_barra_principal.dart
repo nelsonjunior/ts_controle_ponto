@@ -4,9 +4,12 @@ import 'package:ts_controle_ponto/app/shared/themes/colors.dart';
 class FundoBarraPrincipal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    
+    var tamanhoBarra = MediaQuery.of(context).size.height * 0.25;
+
     return CustomPaint(
       child: Container(
-        height: 160.0,
+        height: tamanhoBarra,
       ),
       painter: CurvesPainter(),
     );

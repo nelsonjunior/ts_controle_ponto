@@ -1,3 +1,4 @@
+import 'package:ts_controle_ponto/app/shared/models/configuracao_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/usuario_model.dart';
@@ -31,4 +32,10 @@ class Repository {
   Future<List<MarcacaoPontoModel>> recuperarMarcacoes(
           String identUsuario, String identPonto) =>
       _firestoreProvider.recuperarMarcacoes(identUsuario, identPonto);
+
+  Future<void> salvarConfiguracao(ConfiguracaoModel configuracaoModel) =>
+      _firestoreProvider.salvarConfiguracao(configuracaoModel);
+
+  Future<ConfiguracaoModel> recuperarConfiguracao(String identUsuario) =>
+      _firestoreProvider.recuperarConfiguracao(identUsuario);
 }

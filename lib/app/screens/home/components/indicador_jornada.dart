@@ -142,7 +142,7 @@ class _IndicadorJornadaState extends State<IndicadorJornada>
                       Flexible(
                         child: Text(
                           snapshot.data.jornadaCompleta
-                              ? 'Jornada ${snapshot.data.horasJornada.inHours}h/dia\nconcluída'
+                              ? 'Jornada ${snapshot.data.duracaoJornada.hour.toString().padLeft(2, "0")}:${snapshot.data.duracaoJornada.minute.toString().padLeft(2, "0")}/dia\nconcluída'
                               : 'Saída estimada \n às ${formatarHora.format(snapshot.data.saidaEstimada)}',
                           textAlign: TextAlign.center,
                           softWrap: true,
