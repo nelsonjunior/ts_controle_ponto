@@ -1,16 +1,23 @@
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slide_popup_dialog/slide_popup_dialog.dart';
+import 'package:ts_controle_ponto/app/app_bloc.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
+import 'package:ts_controle_ponto/app/screens/home/components/dados_indicador_jornada.dart';
 import 'package:ts_controle_ponto/app/screens/home/home_module.dart';
 import 'package:ts_controle_ponto/app/screens/home/ponto_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
+import 'package:ts_controle_ponto/app/shared/blocs/sincronizacao_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/components/zoom_scaffold.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/themes/colors.dart';
 import 'package:ts_controle_ponto/app/shared/utils/data_utils.dart';
+import 'package:tutorial_coach_mark/animated_focus_light.dart';
+import 'package:tutorial_coach_mark/target_position.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import 'components/barra_principal.dart';
 import 'components/indicador_jornada.dart';
@@ -22,6 +29,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
+  List<TargetFocus> targets = List();
+
+  GlobalKey keyBtnMarcarPonto = GlobalKey();
+  GlobalKey keyUltimaMarcacoes = GlobalKey();
+  GlobalKey keyTempoTrabalho = GlobalKey();
+  GlobalKey keyBtnConfiguracao = GlobalKey();
+
   AnimationController _iconAnimationController;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
@@ -34,7 +48,8 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     _iconAnimationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 500));
-
+    initTargets();
+    WidgetsBinding.instance.addPostFrameCallback(_afterLayout);
     super.initState();
   }
 
@@ -224,6 +239,7 @@ class _HomeScreenState extends State<HomeScreen>
           width: 75.0,
           child: FittedBox(
             child: FloatingActionButton(
+                key: keyBtnMarcarPonto,
                 backgroundColor: Colors.red,
                 elevation: 0,
                 child: Container(
@@ -232,9 +248,10 @@ class _HomeScreenState extends State<HomeScreen>
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.red, width: 4.0)),
                   child: StreamBuilder(
-                      stream: AppModule.to.bloc<LoginBloc>().googleAccount,
+                      stream: AppModule.to.bloc<LoginBloc>().usuarioStream,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
+                          _afterLayout(null);
                           return StreamBuilder<PontoModel>(
                               stream:
                                   HomeModule.to.bloc<PontoBloc>().pontoStream,
@@ -285,16 +302,34 @@ class _HomeScreenState extends State<HomeScreen>
         bottomNavigationBar: BottomAppBar(
           shape: CircularNotchedRectangle(),
           notchMargin: 6.0,
-          child: new Row(
+          child: Row(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               IconButton(
+                key: keyBtnConfiguracao,
                 icon: Icon(Icons.menu),
                 onPressed: () {
                   Provider.of<MenuController>(context, listen: true).toggle();
                 },
               ),
+              StreamBuilder<bool>(
+                  stream: AppModule.to.bloc<AppBloc>().modoTesteSream,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return IconButton(
+                          icon: Icon(
+                            Icons.report_problem,
+                            color:
+                                snapshot.data ? Colors.yellow : Colors.black87,
+                          ),
+                          onPressed: () {
+                            AppModule.to.bloc<AppBloc>().alterarModoTeste();
+                          });
+                    } else {
+                      return Container();
+                    }
+                  }),
             ],
           ),
         ),
@@ -302,8 +337,9 @@ class _HomeScreenState extends State<HomeScreen>
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             BarraPrincipal(),
-            StreamBuilder<PontoModel>(
-                stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
+            StreamBuilder<DadosIndicadorJornada>(
+                key: keyTempoTrabalho,
+                stream: HomeModule.to.bloc<PontoBloc>().dadosIndicadorStream,
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     return IndicadorJornada(snapshot.data);
@@ -321,6 +357,7 @@ class _HomeScreenState extends State<HomeScreen>
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
                 "Últimas marcações",
+                key: keyUltimaMarcacoes,
                 style: TextStyle(
                     fontSize: 16.0,
                     fontWeight: FontWeight.w500,
@@ -331,7 +368,11 @@ class _HomeScreenState extends State<HomeScreen>
               child: StreamBuilder<PontoModel>(
                 stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
                 builder: (BuildContext context, AsyncSnapshot snapshot) {
-                  if (!HomeModule.to.bloc<PontoBloc>().loading) {
+                  if (AppModule.to.bloc<LoginBloc>().usuarioAtual == null) {
+                    return Center(
+                      child: Text("Autenticação não realizada."),
+                    );
+                  } else if (!HomeModule.to.bloc<PontoBloc>().loading) {
                     return GridView.builder(
                       padding: EdgeInsets.all(16.0),
                       scrollDirection: Axis.vertical,
@@ -381,7 +422,215 @@ class _HomeScreenState extends State<HomeScreen>
                 },
               ),
             ),
+            StreamBuilder<bool>(
+                stream:
+                    AppModule.to.bloc<SincronizacaoBloc>().sincronizacaoStreem,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.max,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text("Sincronizando...",
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                  color: corPrincipal,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500)),
+                        ),
+                        LinearProgressIndicator()
+                      ],
+                    );
+                  } else {
+                    return Container();
+                  }
+                }),
           ],
         ));
+  }
+
+  void initTargets() {
+    targets.add(TargetFocus(
+      identify: "Marcar Ponto",
+      keyTarget: keyBtnMarcarPonto,
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Registrar Ponto ficou fácil",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "Primeiro escolha sua conta do google para podermos salvar suas marcações na nuvem! Com um toque uma nova marcação é registrada automáticamente. Um toque longo você pode definir qual o horário da marcação.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Ultimas Marcacoes",
+      keyTarget: keyUltimaMarcacoes,
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Últimas marcações",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "Suas últimas marcações serão mostradas nesse espaço, através delas será feito o cálculo do tempo trabalho.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Tempo Trabalhado",
+      keyTarget: keyTempoTrabalho,
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Tempo Trabalho",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "O tempo trabalho será cálculado através da difereça das marcações de entrada e saída. Será mostrado tempo restando para o termino da sua jornada.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Alterar Jornada",
+      keyTarget: keyBtnConfiguracao,
+      contents: [
+        ContentTarget(
+            align: AlignContent.top,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Alterar Jornada",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "Você poderá alterar aquantidade de horas da sua jornada e tempo padrão de intervalo através do menu de configurações.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+    targets.add(TargetFocus(
+      identify: "Barra Navegacao",
+      targetPosition: TargetPosition(Size(60.0, 60.0), Offset(20.0, 20.0)),
+      contents: [
+        ContentTarget(
+            align: AlignContent.bottom,
+            child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Alterar Data",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      "Você consultar ou realizar as marcações em dias diferentes navegando para datas anteriores ou futuras.",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ))
+      ],
+      shape: ShapeLightFocus.Circle,
+    ));
+  }
+
+  void showTutorial() {
+    TutorialCoachMark(context,
+        targets: targets,
+        colorShadow: Colors.black54,
+        textSkip: "Pular",
+        paddingFocus: 20.0,
+        opacityShadow: 0.8, clickSkip: () async {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setBool('monstrarTutorial', false);
+    })
+      ..show();
+  }
+
+  void _afterLayout(_) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool _monstrarTutorial = (prefs.getBool('monstrarTutorial') ?? false);
+    if (!_monstrarTutorial) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setBool('monstrarTutorial', true);
+      Future.delayed(Duration(milliseconds: 100), () {
+        showTutorial();
+      });
+    }
   }
 }

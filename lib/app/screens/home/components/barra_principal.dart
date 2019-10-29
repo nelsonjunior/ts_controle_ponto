@@ -18,7 +18,6 @@ class BarraPrincipal extends StatelessWidget {
             initialData: DateTime.now(),
             builder: (context, snapshot) {
               HomeModule.to.bloc<PontoBloc>().obterPonto(snapshot.data);
-
               return SafeArea(
                 child: Padding(
                   padding: EdgeInsets.only(top: 20.0),

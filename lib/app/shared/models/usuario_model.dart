@@ -15,6 +15,13 @@ class UsuarioModel {
     this.fotoURL = account.photoUrl;
   }
 
+  UsuarioModel.fromMap(Map<String, dynamic> data) {
+    this.nome = data['nome'];
+    this.nomeCompleto = data['nomeCompleto'];
+    this.email = data['email'];
+    this.fotoURL = data['fotoURL'];
+  }
+
   UsuarioModel.fromDocument(DocumentSnapshot doc) {
     this.nome = doc.data['nome'];
     this.nomeCompleto = doc.data['nomeCompleto'];

@@ -14,6 +14,7 @@ class SpinnerBotton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         InkWell(
           onTap: diminuirOnTap,

@@ -28,7 +28,7 @@ class ConfiguracaoScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(15.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             SizedBox(
               height: 20.0,

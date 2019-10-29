@@ -54,6 +54,23 @@ class FirestoreProvider {
     return null;
   }
 
+  Future<List<PontoModel>> recuperarPontos(String idUsuario) async {
+    List<PontoModel> pontos = [];
+
+    QuerySnapshot snapshots = await _firestore
+        .collection("usuarios")
+        .document(idUsuario)
+        .collection("pontos")
+        .getDocuments();
+
+    if (snapshots != null) {
+      pontos = snapshots.documents
+          .map((doc) => PontoModel.fromDocument(doc))
+          .toList();
+    }
+    return pontos;
+  }
+
   Future<MarcacaoPontoModel> incluirMarcacao(
       MarcacaoPontoModel marcacao) async {
     _firestore

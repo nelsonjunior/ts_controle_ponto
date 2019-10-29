@@ -29,6 +29,21 @@ class ConfiguracaoModel {
     }
   }
 
+  ConfiguracaoModel.fromMap(Map<String, dynamic> data) {
+    if (data != null) {
+      this.identUsuario = data['identUsuario'];
+      this.jornadaPadrao = TimeOfDay(
+          hour: data['jornadaPadraoHoras'],
+          minute: data['jornadaPadraoMintos']);
+      this.intervalorPadrao = TimeOfDay(
+          hour: data['intervalorPadraoHoras'],
+          minute: data['intervalorPadraoMinutos']);
+    } else {
+      this.jornadaPadrao = TimeOfDay(hour: 8, minute: 0);
+      this.intervalorPadrao = TimeOfDay(hour: 1, minute: 0);
+    }
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'identUsuario': this.identUsuario,

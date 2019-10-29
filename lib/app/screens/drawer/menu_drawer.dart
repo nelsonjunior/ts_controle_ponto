@@ -125,6 +125,7 @@ class MenuScreen extends StatelessWidget {
             ListTile(
               onTap: () {
                 AppModule.to.bloc<LoginBloc>().signOutGoogle();
+                Provider.of<MenuController>(context, listen: true).toggle();
               },
               leading: Icon(
                 Icons.exit_to_app,

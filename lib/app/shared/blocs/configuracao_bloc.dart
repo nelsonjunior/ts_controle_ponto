@@ -5,10 +5,12 @@ import 'package:ts_controle_ponto/app/app_module.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/models/configuracao_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/repository.dart';
+import 'package:ts_controle_ponto/app/shared/sincronizacao/sincronizacao_configuracao.dart';
 import 'package:ts_controle_ponto/app/shared/utils/time_of_day_utils.dart';
 
 class ConfiguracaoBloc extends BlocBase {
   final _repository = Repository();
+  final _sincronizacao = SincronizacaoConfiguracao();
 
   static const Duration intervalorPadrao = Duration(minutes: 15);
 
@@ -27,6 +29,13 @@ class ConfiguracaoBloc extends BlocBase {
       _repository
           .recuperarConfiguracao(usuarioAtual.email)
           .then((ConfiguracaoModel configuracao) {
+        print('retorno cofinguracao $configuracao');
+
+        if (configuracao == null) {
+          configuracao = ConfiguracaoModel.empty();
+          configuracao.identUsuario = usuarioAtual.email;
+          _repository.salvarConfiguracao(configuracao);
+        }
         _configuracaoAtual = configuracao;
         _dataConfiguracaoJornada.sink.add(_configuracaoAtual);
       });
@@ -105,6 +114,7 @@ class ConfiguracaoBloc extends BlocBase {
     configuracaoModel.identUsuario =
         AppModule.to.bloc<LoginBloc>().usuarioAtual.email;
 
+    _sincronizacao.alterar(configuracaoModel);
     _repository.salvarConfiguracao(configuracaoModel).then((data) {
       _configuracaoAtual = configuracaoModel;
     });

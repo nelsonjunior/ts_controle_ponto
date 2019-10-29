@@ -80,6 +80,9 @@ PODS:
     - GoogleUtilities/Environment (~> 6.0)
     - GoogleUtilities/UserDefaults (~> 6.0)
   - Flutter (1.0.0)
+  - FMDB (2.7.5):
+    - FMDB/standard (= 2.7.5)
+  - FMDB/standard (2.7.5)
   - google_sign_in (0.0.1):
     - Flutter
     - GoogleSignIn (~> 4.0)
@@ -146,7 +149,14 @@ PODS:
     - nanopb/encode (= 0.3.901)
   - nanopb/decode (0.3.901)
   - nanopb/encode (0.3.901)
+  - path_provider (0.0.1):
+    - Flutter
   - Protobuf (3.9.0)
+  - shared_preferences (0.0.1):
+    - Flutter
+  - sqflite (0.0.1):
+    - Flutter
+    - FMDB (~> 2.7.2)
 
 DEPENDENCIES:
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
@@ -155,9 +165,12 @@ DEPENDENCIES:
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `.symlinks/flutter/ios`)
   - google_sign_in (from `.symlinks/plugins/google_sign_in/ios`)
+  - path_provider (from `.symlinks/plugins/path_provider/ios`)
+  - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
+  - sqflite (from `.symlinks/plugins/sqflite/ios`)
 
 SPEC REPOS:
-  https://github.com/cocoapods/specs.git:
+  https://github.com/CocoaPods/Specs.git:
     - BoringSSL-GRPC
     - Firebase
     - FirebaseAnalytics
@@ -180,6 +193,8 @@ SPEC REPOS:
     - leveldb-library
     - nanopb
     - Protobuf
+  trunk:
+    - FMDB
 
 EXTERNAL SOURCES:
   cloud_firestore:
@@ -194,6 +209,12 @@ EXTERNAL SOURCES:
     :path: ".symlinks/flutter/ios"
   google_sign_in:
     :path: ".symlinks/plugins/google_sign_in/ios"
+  path_provider:
+    :path: ".symlinks/plugins/path_provider/ios"
+  shared_preferences:
+    :path: ".symlinks/plugins/shared_preferences/ios"
+  sqflite:
+    :path: ".symlinks/plugins/sqflite/ios"
 
 SPEC CHECKSUMS:
   BoringSSL-GRPC: db8764df3204ccea016e1c8dd15d9a9ad63ff318
@@ -210,7 +231,8 @@ SPEC CHECKSUMS:
   FirebaseCoreDiagnosticsInterop: 6829da2b8d1fc795ff1bd99df751d3788035d2cb
   FirebaseFirestore: 65aba32fcc772434dc69726fb0c528d2a67ec486
   FirebaseInstanceID: 8b42755db950682e7de0d167bc6fb26a57b244af
-  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
   google_sign_in: 27e70a98b529f0b076d4b19f231b81da28b1750b
   GoogleAppMeasurement: 86a82f0e1f20b8eedf8e20326530138fd71409de
   GoogleDataTransport: 9c3d63ed82f882a9a74d4be67dd7ad01bf046102
@@ -223,8 +245,11 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 61bb0f61a4cb560030f1222021178008a5727a23
   leveldb-library: 55d93ee664b4007aac644a782d11da33fba316f7
   nanopb: 2901f78ea1b7b4015c860c2fdd1ea2fee1a18d48
+  path_provider: fb74bd0465e96b594bb3b5088ee4a4e7bb1f2a9d
   Protobuf: 1097ca58584c8d9be81bfbf2c5ff5975648dd87a
+  shared_preferences: 430726339841afefe5142b9c1f50cb6bd7793e01
+  sqflite: ff1d9da63c06588cc8d1faf7256d741f16989d5a
 
 PODFILE CHECKSUM: 7fb83752f59ead6285236625b82473f90b1cb932
 
-COCOAPODS: 1.7.5
+COCOAPODS: 1.8.4
