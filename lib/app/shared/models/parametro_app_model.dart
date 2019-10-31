@@ -1,4 +1,6 @@
 const USUARIO_LOGADO = 'usuario-logado';
+const INICIAR_TUTORIAL = 'iniciar-tutorial';
+
 
 class ParametroAppModel {
   String identParametro;

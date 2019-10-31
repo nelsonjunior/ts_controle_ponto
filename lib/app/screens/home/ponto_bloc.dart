@@ -10,11 +10,9 @@ import 'package:ts_controle_ponto/app/app_module.dart';
 import 'package:ts_controle_ponto/app/screens/home/components/dados_indicador_jornada.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/configuracao_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
-import 'package:ts_controle_ponto/app/shared/models/configuracao_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/entrada_saida_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
-import 'package:ts_controle_ponto/app/shared/models/usuario_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/repository.dart';
 import 'package:ts_controle_ponto/app/shared/sincronizacao/sincronizacao_marcacao.dart';
 import 'package:ts_controle_ponto/app/shared/sincronizacao/sincronizacao_ponto.dart';
@@ -31,8 +29,8 @@ class PontoBloc extends BlocBase {
 
   PontoModel pontoSelecionado = PontoModel.empty(DateTime.now());
 
-  ConfiguracaoModel configuracaoAtual;
-  UsuarioModel usuarioAtual;
+  LoginBloc loginBloc;
+  ConfiguracaoBloc configBloc;
 
   bool loading = false;
 
@@ -45,8 +43,8 @@ class PontoBloc extends BlocBase {
     _dadosIndicadorJornada = new BehaviorSubject<DadosIndicadorJornada>.seeded(
         DadosIndicadorJornada.empty());
 
-    configuracaoAtual = AppModule.to.bloc<ConfiguracaoBloc>().configuracaoAtual;
-    usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
+    loginBloc = AppModule.to.bloc<LoginBloc>();
+    configBloc = AppModule.to.bloc<ConfiguracaoBloc>();
   }
 
   Stream<PontoModel> get pontoStream => _pontoAtual.stream;
@@ -60,10 +58,13 @@ class PontoBloc extends BlocBase {
     _pontoAtual.sink.add(pontoSelecionado);
   }
 
-  void obterPonto(DateTime dataReferencia) {
-    usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
-    configuracaoAtual = AppModule.to.bloc<ConfiguracaoBloc>().configuracaoAtual;
+  void obterPontoLogin() {
+    print('Obter Ponto Login');
+    pontoSelecionado = null;
+    obterPonto(DateTime.now());
+  }
 
+  void obterPonto(DateTime dataReferencia) {
     loading = true;
 
     dataReferencia =
@@ -72,19 +73,17 @@ class PontoBloc extends BlocBase {
     if (pontoSelecionado != null &&
         pontoSelecionado.dataReferencia.compareTo(dataReferencia) == 0) {
       loading = false;
-    } else if (usuarioAtual != null) {
-      pontoSelecionado.identUsuario = usuarioAtual.email;
-
-      _pontoAtual.sink.add(pontoSelecionado);
+    } else if (loginBloc.usuarioAtual != null) {
+      print('Obter Ponto de $dataReferencia');
 
       _repository
-          .recuperarPonto(usuarioAtual.email, dataReferencia)
+          .recuperarPonto(loginBloc.usuarioAtual.email, dataReferencia)
           .then((PontoModel ponto) {
         if (ponto != null) {
           pontoSelecionado = ponto;
         } else {
           pontoSelecionado = PontoModel.empty(dataReferencia);
-          pontoSelecionado.identUsuario = usuarioAtual.email;
+          pontoSelecionado.identUsuario = loginBloc.usuarioAtual.email;
         }
         definirTempoTrabalhado();
         _pontoAtual.sink.add(pontoSelecionado);
@@ -115,8 +114,8 @@ class PontoBloc extends BlocBase {
 
     definirTempoTrabalhado();
 
-    pontoSelecionado.identUsuario = usuarioAtual.email;
-    marcacaoPontoModel.identUsuario = usuarioAtual.email;
+    pontoSelecionado.identUsuario = loginBloc.usuarioAtual.email;
+    marcacaoPontoModel.identUsuario = loginBloc.usuarioAtual.email;
 
     _repository.incluirPonto(pontoSelecionado);
     _sincronizarPonto.incluir(pontoSelecionado);
@@ -148,7 +147,7 @@ class PontoBloc extends BlocBase {
 
     double percTotal = 100.0;
     double minTotalJornada =
-        TimeOfDayUtils.duration(configuracaoAtual.jornadaPadrao)
+        TimeOfDayUtils.duration(configBloc.configuracaoAtual.jornadaPadrao)
             .inMinutes
             .toDouble();
     double minTrabalhados = tempoTrabalho.inMinutes.toDouble();

@@ -26,22 +26,21 @@ class SincronizacaoPonto with SincronizacaoBase<PontoModel> {
   }
 
   @override
-  Future<void> carregar(String identUsuario) async {
+  void carregar(String identUsuario) async {
     print('carregando dados ponto $identUsuario');
     var pontos = await _firestoreProvider.recuperarPontos(identUsuario);
     if (pontos.isNotEmpty) {
       pontos.forEach((ponto) async {
         print('carregando ponto $ponto');
-        _pontoDao.incluirPonto(ponto);
+        await _pontoDao.incluirPonto(ponto);
         var marcacoes = await _firestoreProvider.recuperarMarcacoes(
             identUsuario, ponto.ident);
-        marcacoes.forEach((m) {
+        marcacoes.forEach((m) async {
           print('carregando marcacao $m');
-          _marcacaoDao.incluirMarcacao(m);
+          await _marcacaoDao.incluirMarcacao(m);
         });
       });
     }
-    return null;
   }
 
   @override

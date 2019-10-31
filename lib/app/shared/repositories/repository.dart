@@ -6,6 +6,7 @@ import 'package:ts_controle_ponto/app/shared/models/usuario_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/marcacao_dao.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/parametro_app_dao.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/ponto_dao.dart';
+import 'package:ts_controle_ponto/app/shared/repositories/sincronizacao_dao.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/usuario_dao.dart';
 
 import 'configuracao_dao.dart';
@@ -22,6 +23,8 @@ class Repository {
   final _configuracaoDao = ConfiguracaoDao();
 
   final _parametroAppDao = ParametroAppDao();
+
+  final _sincronizacaoDao = SincronizacaoDao();
 
   Future<void> incluirUsuario(UsuarioModel usuarioModel) =>
       _usuarioDao.incluirUsuario(usuarioModel);
@@ -64,4 +67,17 @@ class Repository {
 
   Future<int> removerParametro(String identParametro) =>
       _parametroAppDao.remover(identParametro);
+
+  Future<void> excluirUsuarioLogado(String identUsuario) async {
+    print('Excluindo informacoes do usuario $identUsuario');
+
+    removerParametro(USUARIO_LOGADO);
+    removerParametro(INICIAR_TUTORIAL);
+    _usuarioDao.removerUsuario(identUsuario);
+    _pontoDao.removerPontosPorUsuario(identUsuario);
+    _marcacaoDao.removerMarcacoesPorUsuario(identUsuario);
+    _configuracaoDao.removerPorUsuario(identUsuario);
+    _sincronizacaoDao.removerTodos();
+    return Future.value();
+  }
 }

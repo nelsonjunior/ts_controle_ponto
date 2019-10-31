@@ -37,4 +37,10 @@ class MarcacaoDao {
     await db.delete(marcacaoTABLE,
         where: 'ident = ?', whereArgs: [marcacaoModel.ident]);
   }
+
+  Future<void> removerMarcacoesPorUsuario(String identUsuario) async {
+    final db = await dbHelper.database;
+    await db.delete(marcacaoTABLE,
+        where: 'identUsuario = ?', whereArgs: [identUsuario]);
+  }
 }

@@ -37,11 +37,9 @@ class MenuScreen extends StatelessWidget {
                 stream: AppModule.to.bloc<LoginBloc>().usuarioStream,
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    AppModule.to.bloc<LoginBloc>().signInGoogleSilently();
                     return Center(
                       child: IconButton(
                         onPressed: () {
-                          print('login');
                           AppModule.to.bloc<LoginBloc>().sigInGoogle();
                         },
                         icon: Icon(Icons.account_circle,

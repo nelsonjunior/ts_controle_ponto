@@ -1,7 +1,6 @@
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slide_popup_dialog/slide_popup_dialog.dart';
 import 'package:ts_controle_ponto/app/app_bloc.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
@@ -44,12 +43,14 @@ class _HomeScreenState extends State<HomeScreen>
 
   int currentPage = 1;
 
+  bool _exibindoTutorial = false;
+
   @override
   void initState() {
     _iconAnimationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 500));
     initTargets();
-    WidgetsBinding.instance.addPostFrameCallback(_afterLayout);
+    WidgetsBinding.instance.addPostFrameCallback(_verificarUsuarioLogado);
     super.initState();
   }
 
@@ -251,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen>
                       stream: AppModule.to.bloc<LoginBloc>().usuarioStream,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          _afterLayout(null);
+                          _iniciarTutorial();
                           return StreamBuilder<PontoModel>(
                               stream:
                                   HomeModule.to.bloc<PontoBloc>().pontoStream,
@@ -609,28 +610,30 @@ class _HomeScreenState extends State<HomeScreen>
     ));
   }
 
-  void showTutorial() {
-    TutorialCoachMark(context,
-        targets: targets,
-        colorShadow: Colors.black54,
-        textSkip: "Pular",
-        paddingFocus: 20.0,
-        opacityShadow: 0.8, clickSkip: () async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setBool('monstrarTutorial', false);
-    })
-      ..show();
+  void _tutorialConcluido() {
+    _exibindoTutorial = false;
+    AppModule.to.bloc<LoginBloc>().marcarTutorialConcluido();
   }
 
-  void _afterLayout(_) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool _monstrarTutorial = (prefs.getBool('monstrarTutorial') ?? false);
-    if (!_monstrarTutorial) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setBool('monstrarTutorial', true);
-      Future.delayed(Duration(milliseconds: 100), () {
-        showTutorial();
-      });
+  void _iniciarTutorial() async {
+    if (AppModule.to.bloc<LoginBloc>().iniciarTutorial &&
+        !_exibindoTutorial &&
+        Provider.of<MenuController>(context, listen: true).state ==
+            MenuState.opening) {
+      print('_iniciarTutorial');
+      _exibindoTutorial = true;
+      TutorialCoachMark(context,
+          targets: targets,
+          colorShadow: Colors.black54,
+          textSkip: "Pular",
+          paddingFocus: 20.0,
+          opacityShadow: 0.8,
+          finish: _tutorialConcluido)
+        ..show();
     }
+  }
+
+  void _verificarUsuarioLogado(_) {
+    AppModule.to.bloc<LoginBloc>().verificarUsuarioLogado();
   }
 }

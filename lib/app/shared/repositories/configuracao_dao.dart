@@ -21,9 +21,15 @@ class ConfiguracaoDao {
     return result.isNotEmpty ? ConfiguracaoModel.fromMap(result.first) : null;
   }
 
-  Future<void> alterar(ConfiguracaoModel usuarioModel) async {
+  Future<void> alterar(ConfiguracaoModel configuracaoModel) async {
     final db = await dbHelper.database;
-    await db.update(configuracaoTABLE, usuarioModel.toMap(),
-        where: 'identUsuario = ?', whereArgs: [usuarioModel.identUsuario]);
+    await db.update(configuracaoTABLE, configuracaoModel.toMap(),
+        where: 'identUsuario = ?', whereArgs: [configuracaoModel.identUsuario]);
+  }
+
+  Future<void> removerPorUsuario(String identUsuario) async {
+    final db = await dbHelper.database;
+    await db.delete(configuracaoTABLE,
+        where: 'identUsuario = ?', whereArgs: [identUsuario]);
   }
 }

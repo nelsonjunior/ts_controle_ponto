@@ -13,10 +13,10 @@ class SincronizacaoConfiguracao with SincronizacaoBase<ConfiguracaoModel> {
   final _configuracaoDao = ConfiguracaoDao();
 
   @override
-  Future<void> carregar(String identUsuario) async {
+  void carregar(String identUsuario) async {
     var configuracao =
         await _firestoreProvider.recuperarConfiguracao(identUsuario);
-    return _configuracaoDao.incluir(configuracao);
+    await _configuracaoDao.incluir(configuracao);
   }
 
   @override

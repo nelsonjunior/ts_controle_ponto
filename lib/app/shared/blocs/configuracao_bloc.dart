@@ -42,7 +42,8 @@ class ConfiguracaoBloc extends BlocBase {
     }
   }
 
-  ConfiguracaoModel get configuracaoAtual => _configuracaoAtual;
+  ConfiguracaoModel get configuracaoAtual =>
+      _configuracaoAtual ?? ConfiguracaoModel.empty();
 
   Stream<ConfiguracaoModel> get configuracaoStream =>
       _dataConfiguracaoJornada.stream;
@@ -123,11 +124,15 @@ class ConfiguracaoBloc extends BlocBase {
   void recuperarConfiguracao() async {
     var usuarioAtual = AppModule.to.bloc<LoginBloc>().usuarioAtual;
 
+    print('Recuperando Configuracao do usuario $usuarioAtual');
+
     if (usuarioAtual != null) {
       _configuracaoAtual =
           await _repository.recuperarConfiguracao(usuarioAtual.email);
-      _dataConfiguracaoJornada.sink.add(_configuracaoAtual);
+    } else {
+      _configuracaoAtual = ConfiguracaoModel.empty();
     }
+    _dataConfiguracaoJornada.sink.add(_configuracaoAtual);
   }
 
   @override

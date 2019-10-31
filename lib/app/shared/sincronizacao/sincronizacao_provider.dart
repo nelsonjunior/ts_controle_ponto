@@ -17,12 +17,11 @@ class SincronizacaoProvider {
     endponts[ConfiguracaoModel] = SincronizacaoConfiguracao();
   }
 
-  Future<void> carregar(String identUsuario) {
+  void carregar(String identUsuario) {
     endponts.values.forEach((SincronizacaoBase sb) {
       print('Carredando dados $sb');
       sb.carregar(identUsuario);
     });
-    return Future.value();
   }
 
   Future<void> sincronizarTodos() {

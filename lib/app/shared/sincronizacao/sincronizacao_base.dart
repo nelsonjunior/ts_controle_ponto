@@ -14,7 +14,7 @@ abstract class SincronizacaoBase<T> {
 
   Future<void> sincronizar(SincronizacaoModel sincronizacaoModel);
 
-  Future<void> carregar(String identUsuario);
+  void carregar(String identUsuario);
 
   Future<SincronizacaoModel> alterar(T model) {
     SincronizacaoModel sinc =

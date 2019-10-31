@@ -28,4 +28,9 @@ class SincronizacaoDao {
     await db.delete(sincronizacaoTABLE,
         where: 'ident = ?', whereArgs: [sincronizacaoModel.ident]);
   }
+
+  Future<void> removerTodos() async {
+    final db = await dbHelper.database;
+    await db.delete(sincronizacaoTABLE);
+  }
 }

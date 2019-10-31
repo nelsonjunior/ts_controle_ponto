@@ -44,4 +44,10 @@ class PontoDao {
     await db.update(pontoTABLE, pontoModel.toMap(),
         where: 'ident', whereArgs: [pontoModel.ident]);
   }
+
+  Future<void> removerPontosPorUsuario(String identUsuario) async {
+    final db = await dbHelper.database;
+    await db.delete(pontoTABLE,
+        where: 'identUsuario', whereArgs: [identUsuario]);
+  }
 }

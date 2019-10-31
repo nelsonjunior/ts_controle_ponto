@@ -12,14 +12,20 @@ class UsuarioDao {
 
   Future<UsuarioModel> recuperarUsuario(String identUsuario) async {
     final db = await dbHelper.database;
-    List<Map<String, dynamic>> result =
-        await db.query(usuarioTABLE, where: 'email = ?', whereArgs: [identUsuario]);
+    List<Map<String, dynamic>> result = await db
+        .query(usuarioTABLE, where: 'email = ?', whereArgs: [identUsuario]);
     return result.isNotEmpty ? UsuarioModel.fromMap(result.first) : null;
   }
 
   Future<void> alterarUsuario(UsuarioModel usuarioModel) async {
     final db = await dbHelper.database;
     await db.update(usuarioTABLE, usuarioModel.toMap(),
-        where: 'email', whereArgs: [usuarioModel.email]);
+        where: 'email = ?', whereArgs: [usuarioModel.email]);
+  }
+
+  Future<void> removerUsuario(String identUsuario) async {
+    final db = await dbHelper.database;
+    await db
+        .delete(usuarioTABLE, where: 'email = ?', whereArgs: [identUsuario]);
   }
 }
