@@ -619,7 +619,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (AppModule.to.bloc<LoginBloc>().iniciarTutorial &&
         !_exibindoTutorial &&
         Provider.of<MenuController>(context, listen: true).state ==
-            MenuState.opening) {
+            MenuState.closed) {
       print('_iniciarTutorial');
       _exibindoTutorial = true;
       TutorialCoachMark(context,
