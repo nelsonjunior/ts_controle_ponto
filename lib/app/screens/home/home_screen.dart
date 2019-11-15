@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen>
                       stream: AppModule.to.bloc<LoginBloc>().usuarioStream,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          _iniciarTutorial();
+                          // _iniciarTutorial();
                           return StreamBuilder<PontoModel>(
                               stream:
                                   HomeModule.to.bloc<PontoBloc>().pontoStream,
@@ -617,10 +617,9 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _iniciarTutorial() async {
     if (AppModule.to.bloc<LoginBloc>().iniciarTutorial &&
-        !_exibindoTutorial &&
-        Provider.of<MenuController>(context, listen: true).state ==
-            MenuState.closed) {
+        !_exibindoTutorial) {
       print('_iniciarTutorial');
+      
       _exibindoTutorial = true;
       TutorialCoachMark(context,
           targets: targets,

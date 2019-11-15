@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:core';
 import 'dart:math';
 
 import 'package:bloc_pattern/bloc_pattern.dart';
@@ -14,14 +15,18 @@ import 'package:ts_controle_ponto/app/shared/models/entrada_saida_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/repository.dart';
+import 'package:ts_controle_ponto/app/shared/services/noticiacao_service.dart';
 import 'package:ts_controle_ponto/app/shared/sincronizacao/sincronizacao_marcacao.dart';
 import 'package:ts_controle_ponto/app/shared/sincronizacao/sincronizacao_ponto.dart';
+import 'package:ts_controle_ponto/app/shared/utils/data_utils.dart';
+import 'package:ts_controle_ponto/app/shared/utils/list_utils.dart';
 import 'package:ts_controle_ponto/app/shared/utils/time_of_day_utils.dart';
 
 class PontoBloc extends BlocBase {
   final _repository = Repository();
   final _sincronizarPonto = SincronizacaoPonto();
   final _sincronizarMarcacao = SincronizacaoMarcacao();
+  final NotificacaoService _notificacaoService;
 
   var rnd = Random();
 
@@ -38,7 +43,7 @@ class PontoBloc extends BlocBase {
 
   BehaviorSubject<DadosIndicadorJornada> _dadosIndicadorJornada;
 
-  PontoBloc() {
+  PontoBloc(this._notificacaoService) {
     _pontoAtual = new BehaviorSubject<PontoModel>.seeded(this.pontoSelecionado);
     _dadosIndicadorJornada = new BehaviorSubject<DadosIndicadorJornada>.seeded(
         DadosIndicadorJornada.empty());
@@ -161,7 +166,145 @@ class PontoBloc extends BlocBase {
 
     dadosIndicador.horasTrabalhadas = pontoSelecionado.horasTrabalhadas;
 
+    definirTextoIndicadorJornada(dadosIndicador);
+
     _dadosIndicadorJornada.sink.add(dadosIndicador);
+  }
+
+  void definirTextoIndicadorJornada(DadosIndicadorJornada dadosIndicador) {
+    _notificacaoService.cancelarNotificacoes();
+
+    var intervaloRealizado = verificarSeIntervaloRealizado();
+    var jornadaCompleta = verificarSeJornadaCompleta();
+    if (intervaloRealizado) {
+      if (jornadaCompleta) {
+        TimeOfDay jornadaPadrao = configBloc.configuracaoAtual.jornadaPadrao;
+        dadosIndicador.descIndicador1 =
+            'Jornada ${formatarHora.format(TimeOfDayUtils.toDateTime(jornadaPadrao))}/dia';
+        dadosIndicador.descIndicador2 = 'concluída';
+      } else {
+        DateTime dtSaidaEstimada =
+            saidaEstimada(dadosIndicador, intervaloRealizado);
+
+        dadosIndicador.descIndicador1 = 'Saída estimada';
+        dadosIndicador.descIndicador2 =
+            'às ${formatarHora.format(dtSaidaEstimada)}';
+
+        _notificacaoService.agendarNotificacao(
+            "Não esqueça de registrar o ponto. Sua jornada termina em 5 minutos",
+            dtSaidaEstimada.subtract(Duration(minutes: 5)));
+      }
+    } else {
+      DateTime dtRetornoIntervalo = retornoEstimativaConclusaoIntervalo();
+      if (dtRetornoIntervalo != null) {
+        dadosIndicador.descIndicador1 = 'Retorno intervalo';
+        dadosIndicador.descIndicador2 =
+            'às ${formatarHora.format(dtRetornoIntervalo)}';
+
+        _notificacaoService.agendarNotificacao(
+            "Não esqueça de registrar o ponto. Seu intervalo termina em 5 minutos",
+            dtRetornoIntervalo.subtract(Duration(minutes: 5)));
+      } else {
+        DateTime dtSaidaEstimada =
+            saidaEstimada(dadosIndicador, intervaloRealizado);
+
+        dadosIndicador.descIndicador1 = 'Saída estimada';
+        dadosIndicador.descIndicador2 =
+            'às ${formatarHora.format(dtSaidaEstimada)}';
+
+        _notificacaoService.agendarNotificacao(
+            "Não esqueça de registrar o ponto. Sua jornada termina em 5 minutos",
+            dtSaidaEstimada.subtract(Duration(minutes: 5)));
+      }
+    }
+  }
+
+  bool verificarSeJornadaCompleta() {
+    return Duration(
+                hours: pontoSelecionado.horasTrabalhadas.hour,
+                minutes: pontoSelecionado.horasTrabalhadas.minute)
+            .compareTo(TimeOfDayUtils.duration(
+                configBloc.configuracaoAtual.jornadaPadrao)) >
+        0;
+  }
+
+  DateTime saidaEstimada(
+      DadosIndicadorJornada dadosIndicador, bool intervaloRealizado) {
+    DateTime estimativa = DateTime.now();
+    if (pontoSelecionado.marcacoes != null &&
+        pontoSelecionado.marcacoes.isNotEmpty) {
+      estimativa = pontoSelecionado.marcacoes.last.marcacao;
+    }
+    DateTime hr = calcularHorasRestantes(dadosIndicador, intervaloRealizado);
+    return estimativa.add(Duration(hours: hr.hour, minutes: hr.minute));
+  }
+
+  DateTime retornoEstimativaConclusaoIntervalo() {
+    EntradaSaidaModel ultimaEntradaSaidaCompleta;
+
+    for (EntradaSaidaModel entradaSaida
+        in pontoSelecionado.marcacoesAgrupadas) {
+      ultimaEntradaSaidaCompleta = null;
+      if (entradaSaida.entrada != null && entradaSaida.saida != null) {
+        ultimaEntradaSaidaCompleta = entradaSaida;
+      }
+    }
+
+    if (ultimaEntradaSaidaCompleta != null) {
+      Duration tempoIntervaloRealizado =
+          DateTime.now().difference(ultimaEntradaSaidaCompleta.saida);
+
+      TimeOfDay intervaloRestante = TimeOfDayUtils.subtract(
+          configBloc.configuracaoAtual.intervalorPadrao,
+          tempoIntervaloRealizado);
+
+      return DateTime.now().add(TimeOfDayUtils.duration(intervaloRestante));
+    }
+    return null;
+  }
+
+  DateTime calcularHorasRestantes(
+      DadosIndicadorJornada dadosIndicador, bool intervaloRealizado) {
+    TimeOfDay jornadaPadrao = configBloc.configuracaoAtual.jornadaPadrao;
+    Duration intervalo = intervaloRealizado
+        ? Duration(minutes: 0)
+        : TimeOfDayUtils.duration(
+            configBloc.configuracaoAtual.intervalorPadrao);
+
+    DateTime tempoRestante = DateTime(
+            dadosIndicador.horasTrabalhadas.year,
+            dadosIndicador.horasTrabalhadas.month,
+            dadosIndicador.horasTrabalhadas.day,
+            jornadaPadrao.hour,
+            jornadaPadrao.minute)
+        .add(intervalo)
+        .subtract(Duration(
+            hours: dadosIndicador.horasTrabalhadas.hour,
+            minutes: dadosIndicador.horasTrabalhadas.minute));
+
+    return tempoRestante;
+  }
+
+  bool verificarSeIntervaloRealizado() {
+    bool iRealizado = false;
+    var chunk = ListUtils.chunk(pontoSelecionado.marcacoesAgrupadas, 2);
+    for (List lista in chunk) {
+      if (lista.length == 2) {
+        EntradaSaidaModel es1 = lista[0];
+        EntradaSaidaModel es2 = lista[1];
+
+        Duration direfenca = es2.entrada.difference(es1.saida);
+
+        if (direfenca.inMinutes >
+            TimeOfDayUtils.duration(
+                    configBloc.configuracaoAtual.intervalorPadrao)
+                .inMinutes) {
+          iRealizado = true;
+          break;
+        }
+      }
+    }
+    return iRealizado;
   }
 
   void removerMarcacao(MarcacaoPontoModel marcacao) {

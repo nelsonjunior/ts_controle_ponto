@@ -45,10 +45,6 @@ class LoginBloc extends BlocBase {
       _usuarioModel =
           await _repository.recuperarUsuario(paramUsuarioLogado.valorParametro);
 
-      ParametroAppModel paramIniciarTutorial =
-          await _repository.recuperarParametro(INICIAR_TUTORIAL);
-      _iniciarTutorial =
-          paramIniciarTutorial.valorParametro == "true" ? true : false;
       _usario.sink.add(_usuarioModel);
       AppModule.to.bloc<ConfiguracaoBloc>().recuperarConfiguracao();
       AppModule.to.bloc<SincronizacaoBloc>().iniciarSincronizacao();

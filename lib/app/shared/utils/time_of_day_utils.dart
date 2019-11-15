@@ -14,4 +14,8 @@ class TimeOfDayUtils {
   static Duration duration(TimeOfDay timeOfDay) {
     return Duration(hours: timeOfDay.hour, minutes: timeOfDay.minute);
   }
+
+  static DateTime toDateTime(TimeOfDay timeOfDay) {
+    return new DateTime(2020, 1, 1, timeOfDay.hour, timeOfDay.minute);
+  }
 }
