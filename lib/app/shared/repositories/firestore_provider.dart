@@ -86,6 +86,19 @@ class FirestoreProvider {
     return marcacao;
   }
 
+  Future<MarcacaoPontoModel> incluirMarcacaoSincronizacao(
+      MarcacaoPontoModel marcacao) async {
+    _firestore
+        .collection("usuarios")
+        .document(marcacao.identUsuario)
+        .collection("pontos")
+        .document(marcacao.identPonto)
+        .collection("marcacoes")
+        .document(marcacao.ident)
+        .setData(marcacao.toMap());
+    return marcacao;
+  }
+
   Future<void> removerMarcacao(MarcacaoPontoModel marcacao) async {
     _firestore
         .collection("usuarios")

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:ts_controle_ponto/app/shared/contantes.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/sincronizacao_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/firestore_provider.dart';
@@ -26,7 +27,7 @@ class SincronizacaoPonto with SincronizacaoBase<PontoModel> {
   }
 
   @override
-  void carregar(String identUsuario) async {
+  Future<void> carregar(String identUsuario) async {
     print('carregando dados ponto $identUsuario');
     var pontos = await _firestoreProvider.recuperarPontos(identUsuario);
     if (pontos.isNotEmpty) {
@@ -41,16 +42,17 @@ class SincronizacaoPonto with SincronizacaoBase<PontoModel> {
         });
       });
     }
+    return Future.value();
   }
 
   @override
-  Future<void> sincronizar(SincronizacaoModel sincronizacaoModel) {
+  Future<void> sincronizar(SincronizacaoModel sincronizacaoModel) async {
     if (sincronizacaoModel.acao == AcaoSincronizacao.incluir.toString() ||
         sincronizacaoModel.acao == AcaoSincronizacao.alterar.toString()) {
       var pontoModel =
           PontoModel.fromMap(JsonDecoder().convert(sincronizacaoModel.data));
 
-      _firestoreProvider.incluirPonto(pontoModel);
+      await _firestoreProvider.incluirPonto(pontoModel);
     }
     return Future.value();
   }

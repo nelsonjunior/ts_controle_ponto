@@ -1,8 +1,6 @@
 import 'package:ts_controle_ponto/app/shared/models/sincronizacao_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/sincronizacao_dao.dart';
 
-final withIndent = "    ";
-
 enum AcaoSincronizacao { incluir, alterar, remover }
 
 abstract class SincronizacaoBase<T> {
@@ -14,7 +12,7 @@ abstract class SincronizacaoBase<T> {
 
   Future<void> sincronizar(SincronizacaoModel sincronizacaoModel);
 
-  void carregar(String identUsuario);
+  Future<void> carregar(String identUsuario);
 
   Future<SincronizacaoModel> alterar(T model) {
     SincronizacaoModel sinc =

@@ -97,8 +97,8 @@ class PontoBloc extends BlocBase {
     }
   }
 
-  bool registrarMarcacao() {
-    DateTime marcacao = DateTime.now();
+  bool registrarMarcacao({DateTime marcacao}) {
+    marcacao = marcacao ?? DateTime.now();
 
     if (AppModule.to.bloc<AppBloc>().modoTeste) {
       if (pontoSelecionado.marcacoes.isNotEmpty) {
@@ -115,7 +115,18 @@ class PontoBloc extends BlocBase {
     }
 
     pontoSelecionado.marcacoes.add(marcacaoPontoModel);
-    pontoSelecionado.marcacoes.sort((a, b) => a.marcacao.compareTo(b.marcacao));
+    pontoSelecionado.marcacoes.sort((a, b) => DateTime(
+            pontoSelecionado.dataReferencia.year,
+            pontoSelecionado.dataReferencia.month,
+            pontoSelecionado.dataReferencia.day,
+            a.marcacao.hour,
+            a.marcacao.minute)
+        .compareTo(DateTime(
+            pontoSelecionado.dataReferencia.year,
+            pontoSelecionado.dataReferencia.month,
+            pontoSelecionado.dataReferencia.day,
+            b.marcacao.hour,
+            b.marcacao.minute)));
 
     definirTempoTrabalhado();
 
@@ -125,8 +136,10 @@ class PontoBloc extends BlocBase {
     _repository.incluirPonto(pontoSelecionado);
     _sincronizarPonto.incluir(pontoSelecionado);
 
-    _repository.incluirMarcacao(marcacaoPontoModel);
-    _sincronizarMarcacao.incluir(marcacaoPontoModel);
+    _repository.incluirMarcacao(marcacaoPontoModel).then((marcacao) {
+      marcacaoPontoModel = marcacao;
+      _sincronizarMarcacao.incluir(marcacaoPontoModel);
+    });
 
     _pontoAtual.sink.add(pontoSelecionado);
 
@@ -172,49 +185,58 @@ class PontoBloc extends BlocBase {
   }
 
   void definirTextoIndicadorJornada(DadosIndicadorJornada dadosIndicador) {
-    _notificacaoService.cancelarNotificacoes();
-
     var intervaloRealizado = verificarSeIntervaloRealizado();
     var jornadaCompleta = verificarSeJornadaCompleta();
-    if (intervaloRealizado) {
-      if (jornadaCompleta) {
-        TimeOfDay jornadaPadrao = configBloc.configuracaoAtual.jornadaPadrao;
-        dadosIndicador.descIndicador1 =
-            'Jornada ${formatarHora.format(TimeOfDayUtils.toDateTime(jornadaPadrao))}/dia';
-        dadosIndicador.descIndicador2 = 'concluída';
-      } else {
-        DateTime dtSaidaEstimada =
-            saidaEstimada(dadosIndicador, intervaloRealizado);
 
-        dadosIndicador.descIndicador1 = 'Saída estimada';
-        dadosIndicador.descIndicador2 =
-            'às ${formatarHora.format(dtSaidaEstimada)}';
-
-        _notificacaoService.agendarNotificacao(
-            "Não esqueça de registrar o ponto. Sua jornada termina em 5 minutos",
-            dtSaidaEstimada.subtract(Duration(minutes: 5)));
-      }
+    if (!isHoje(pontoSelecionado.dataReferencia)) {
+      TimeOfDay jornadaPadrao = configBloc.configuracaoAtual.jornadaPadrao;
+      dadosIndicador.descIndicador1 =
+          'Jornada ${formatarHora.format(TimeOfDayUtils.toDateTime(jornadaPadrao))}/dia';
+      dadosIndicador.descIndicador2 =
+          jornadaCompleta ? 'concluída' : 'em aberto';
     } else {
-      DateTime dtRetornoIntervalo = retornoEstimativaConclusaoIntervalo();
-      if (dtRetornoIntervalo != null) {
-        dadosIndicador.descIndicador1 = 'Retorno intervalo';
-        dadosIndicador.descIndicador2 =
-            'às ${formatarHora.format(dtRetornoIntervalo)}';
+      _notificacaoService.cancelarNotificacoes();
 
-        _notificacaoService.agendarNotificacao(
-            "Não esqueça de registrar o ponto. Seu intervalo termina em 5 minutos",
-            dtRetornoIntervalo.subtract(Duration(minutes: 5)));
+      if (intervaloRealizado) {
+        if (jornadaCompleta) {
+          TimeOfDay jornadaPadrao = configBloc.configuracaoAtual.jornadaPadrao;
+          dadosIndicador.descIndicador1 =
+              'Jornada ${formatarHora.format(TimeOfDayUtils.toDateTime(jornadaPadrao))}/dia';
+          dadosIndicador.descIndicador2 = 'concluída';
+        } else {
+          DateTime dtSaidaEstimada =
+              saidaEstimada(dadosIndicador, intervaloRealizado);
+
+          dadosIndicador.descIndicador1 = 'Saída estimada';
+          dadosIndicador.descIndicador2 =
+              'às ${formatarHora.format(dtSaidaEstimada)}';
+
+          _notificacaoService.agendarNotificacao(
+              "Não esqueça de registrar o ponto.\nSua jornada termina em 5 minutos",
+              dtSaidaEstimada);
+        }
       } else {
-        DateTime dtSaidaEstimada =
-            saidaEstimada(dadosIndicador, intervaloRealizado);
+        DateTime dtRetornoIntervalo = retornoEstimativaConclusaoIntervalo();
+        if (dtRetornoIntervalo != null) {
+          dadosIndicador.descIndicador1 = 'Retorno intervalo';
+          dadosIndicador.descIndicador2 =
+              'às ${formatarHora.format(dtRetornoIntervalo)}';
 
-        dadosIndicador.descIndicador1 = 'Saída estimada';
-        dadosIndicador.descIndicador2 =
-            'às ${formatarHora.format(dtSaidaEstimada)}';
+          _notificacaoService.agendarNotificacao(
+              "Não esqueça de registrar o ponto.\nSeu intervalo termina em 5 minutos",
+              dtRetornoIntervalo.subtract(Duration(minutes: 5)));
+        } else {
+          DateTime dtSaidaEstimada =
+              saidaEstimada(dadosIndicador, intervaloRealizado);
 
-        _notificacaoService.agendarNotificacao(
-            "Não esqueça de registrar o ponto. Sua jornada termina em 5 minutos",
-            dtSaidaEstimada.subtract(Duration(minutes: 5)));
+          dadosIndicador.descIndicador1 = 'Saída estimada';
+          dadosIndicador.descIndicador2 =
+              'às ${formatarHora.format(dtSaidaEstimada)}';
+
+          _notificacaoService.agendarNotificacao(
+              "Não esqueça de registrar o ponto.\nSua jornada termina em 5 minutos",
+              dtSaidaEstimada.subtract(Duration(minutes: 5)));
+        }
       }
     }
   }
@@ -311,16 +333,42 @@ class PontoBloc extends BlocBase {
     _repository.removerMarcacao(marcacao);
     _sincronizarMarcacao.remover(marcacao);
     pontoSelecionado.marcacoes.remove(marcacao);
+    pontoSelecionado.marcacoes.sort((a, b) => DateTime(
+            pontoSelecionado.dataReferencia.year,
+            pontoSelecionado.dataReferencia.month,
+            pontoSelecionado.dataReferencia.day,
+            a.marcacao.hour,
+            a.marcacao.minute)
+        .compareTo(DateTime(
+            pontoSelecionado.dataReferencia.year,
+            pontoSelecionado.dataReferencia.month,
+            pontoSelecionado.dataReferencia.day,
+            b.marcacao.hour,
+            b.marcacao.minute)));
     definirTempoTrabalhado();
     _sincronizarPonto.alterar(pontoSelecionado);
     _pontoAtual.sink.add(pontoSelecionado);
   }
 
   void alterarMarcacao(MarcacaoPontoModel marcacao) {
+    print('Alterar marcacao ${marcacao.marcacao}');
+
     pontoSelecionado.marcacoes.remove(marcacao);
     _repository.alterarMarcacao(marcacao);
     _sincronizarMarcacao.alterar(marcacao);
     pontoSelecionado.marcacoes.add(marcacao);
+    pontoSelecionado.marcacoes.sort((a, b) => DateTime(
+            pontoSelecionado.dataReferencia.year,
+            pontoSelecionado.dataReferencia.month,
+            pontoSelecionado.dataReferencia.day,
+            a.marcacao.hour,
+            a.marcacao.minute)
+        .compareTo(DateTime(
+            pontoSelecionado.dataReferencia.year,
+            pontoSelecionado.dataReferencia.month,
+            pontoSelecionado.dataReferencia.day,
+            b.marcacao.hour,
+            b.marcacao.minute)));
     definirTempoTrabalhado();
 
     _repository.incluirPonto(pontoSelecionado);
@@ -342,7 +390,21 @@ class PontoBloc extends BlocBase {
     return retorno;
   }
 
-  bool verificarSeExisteMarcacao(TimeOfDay horario) {
+  bool verificarSeExisteMarcacao(DateTime horario) {
+    bool retorno = false;
+
+    if (pontoSelecionado != null &&
+        pontoSelecionado.marcacoes != null &&
+        pontoSelecionado.marcacoes.indexWhere((m) =>
+                (m.marcacao.hour == horario.hour &&
+                    m.marcacao.minute == horario.minute)) >=
+            0) {
+      retorno = true;
+    }
+    return retorno;
+  }
+
+  bool verificarSeExisteMarcacaoTime(TimeOfDay horario) {
     bool retorno = false;
 
     if (pontoSelecionado != null &&

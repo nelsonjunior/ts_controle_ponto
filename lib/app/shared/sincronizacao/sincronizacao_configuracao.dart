@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:ts_controle_ponto/app/shared/contantes.dart';
 import 'package:ts_controle_ponto/app/shared/models/configuracao_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/sincronizacao_model.dart';
 import 'package:ts_controle_ponto/app/shared/repositories/configuracao_dao.dart';
@@ -13,10 +14,11 @@ class SincronizacaoConfiguracao with SincronizacaoBase<ConfiguracaoModel> {
   final _configuracaoDao = ConfiguracaoDao();
 
   @override
-  void carregar(String identUsuario) async {
+  Future<void> carregar(String identUsuario) async {
     var configuracao =
         await _firestoreProvider.recuperarConfiguracao(identUsuario);
     await _configuracaoDao.incluir(configuracao);
+    return Future.value();
   }
 
   @override
@@ -25,12 +27,12 @@ class SincronizacaoConfiguracao with SincronizacaoBase<ConfiguracaoModel> {
   }
 
   @override
-  Future<void> sincronizar(SincronizacaoModel sincronizacaoModel) {
+  Future<void> sincronizar(SincronizacaoModel sincronizacaoModel) async {
     if (sincronizacaoModel.acao == AcaoSincronizacao.alterar.toString()) {
       var model = ConfiguracaoModel.fromMap(
           JsonDecoder().convert(sincronizacaoModel.data));
 
-      _firestoreProvider.salvarConfiguracao(model);
+      await _firestoreProvider.salvarConfiguracao(model);
     }
     return Future.value();
   }

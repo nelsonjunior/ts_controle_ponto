@@ -53,7 +53,7 @@ class PontoModel {
     return {
       'ident': ident,
       'identUsuario': identUsuario,
-      'horasTrabalhadas': formatarHora.format(horasTrabalhadas),
+      'horasTrabalhadas': formatarHora.format(horasTrabalhadas)
     };
   }
 
@@ -61,7 +61,18 @@ class PontoModel {
     List<EntradaSaidaModel> marcacoesAgrupadas = [];
 
     if (marcacoes != null && marcacoes.isNotEmpty) {
-      marcacoes.sort((a, b) => a.marcacao.compareTo(b.marcacao));
+      marcacoes.sort((a, b) => DateTime(
+              this.dataReferencia.year,
+              this.dataReferencia.month,
+              this.dataReferencia.day,
+              a.marcacao.hour,
+              a.marcacao.minute)
+          .compareTo(DateTime(
+              this.dataReferencia.year,
+              this.dataReferencia.month,
+              this.dataReferencia.day,
+              b.marcacao.hour,
+              b.marcacao.minute)));
 
       var chunk = ListUtils.chunk(marcacoes, 2);
 

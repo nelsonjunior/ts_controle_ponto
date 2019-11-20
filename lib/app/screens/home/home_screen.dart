@@ -1,5 +1,6 @@
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cupertino_date_picker/flutter_cupertino_date_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:slide_popup_dialog/slide_popup_dialog.dart';
 import 'package:ts_controle_ponto/app/app_bloc.dart';
@@ -10,12 +11,12 @@ import 'package:ts_controle_ponto/app/screens/home/ponto_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/login_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/sincronizacao_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/components/zoom_scaffold.dart';
+import 'package:ts_controle_ponto/app/shared/contantes.dart';
+import 'package:ts_controle_ponto/app/shared/helpers/tutorial_helper.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/themes/colors.dart';
 import 'package:ts_controle_ponto/app/shared/utils/data_utils.dart';
-import 'package:tutorial_coach_mark/animated_focus_light.dart';
-import 'package:tutorial_coach_mark/target_position.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import 'components/barra_principal.dart';
@@ -45,11 +46,16 @@ class _HomeScreenState extends State<HomeScreen>
 
   bool _exibindoTutorial = false;
 
+  DateTime _horarioSelecionado;
+
+  PontoBloc pontoBloc = HomeModule.to.bloc<PontoBloc>();
+
   @override
   void initState() {
     _iconAnimationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 500));
-    initTargets();
+    initTargets(targets, keyBtnMarcarPonto, keyUltimaMarcacoes,
+        keyTempoTrabalho, keyBtnConfiguracao);
     WidgetsBinding.instance.addPostFrameCallback(_verificarUsuarioLogado);
     super.initState();
   }
@@ -64,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (!animationStatus) {
       _iconAnimationController.forward();
 
-      var retorno = HomeModule.to.bloc<PontoBloc>().registrarMarcacao();
+      var retorno = pontoBloc.registrarMarcacao();
 
       _exibirAlerta(
           _scaffoldKey.currentContext,
@@ -99,41 +105,9 @@ class _HomeScreenState extends State<HomeScreen>
       ..show(context);
   }
 
-  Future<TimeOfDay> _alterarMarcacao(MarcacaoPontoModel marcacao) {
-    Future<TimeOfDay> picked = showTimePicker(
-        context: _scaffoldKey.currentContext,
-        initialTime: TimeOfDay.fromDateTime(new DateTime(
-            marcacao.marcacao.year,
-            marcacao.marcacao.month,
-            marcacao.marcacao.day,
-            marcacao.marcacao.hour,
-            marcacao.marcacao.minute)));
-
-    picked.then((TimeOfDay time) {
-      if (time != null) {
-        if (HomeModule.to.bloc<PontoBloc>().verificarSeExisteMarcacao(time)) {
-          _exibirAlerta(_scaffoldKey.currentContext,
-              "Marcação já registrada ou inválida", false);
-        } else {
-          marcacao.marcacao = DateTime(
-              marcacao.marcacao.year,
-              marcacao.marcacao.month,
-              marcacao.marcacao.day,
-              time.hour,
-              time.minute);
-
-          HomeModule.to.bloc<PontoBloc>().alterarMarcacao(marcacao);
-
-          _exibirAlerta(
-              _scaffoldKey.currentContext, "Marcação salva com sucesso", true);
-        }
-      }
-    });
-
-    return picked;
-  }
-
-  void _detalharMarcacao(MarcacaoPontoModel marcacao) {
+  void _detalharMarcacao(MarcacaoPontoModel marcacao, {bolAlteracao = true}) {
+    print('Detalhar Marcacao ${marcacao.marcacao}');
+    _horarioSelecionado = marcacao.marcacao;
     showSlideDialog(
       context: _scaffoldKey.currentContext,
       backgroundColor: Colors.white,
@@ -141,7 +115,8 @@ class _HomeScreenState extends State<HomeScreen>
         children: <Widget>[
           Container(
             decoration: BoxDecoration(color: Colors.grey[200]),
-            height: 180.0,
+            height:
+                MediaQuery.of(_scaffoldKey.currentContext).size.height * .25,
             padding: EdgeInsets.all(0.0),
             margin: EdgeInsets.all(0.0),
             width: double.infinity,
@@ -157,53 +132,63 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
           Container(
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(color: Colors.white),
-              child: Column(
-                children: <Widget>[
-                  SizedBox(
-                    height: 20.0,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(
-                        Icons.timer,
-                        color: Colors.blue,
-                        size: 40.0,
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(left: 15.0),
-                        child: Text(
-                          formatarHora.format(marcacao.marcacao),
-                          style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 40.0),
-                        ),
-                      ),
-                      Spacer(),
-                      MaterialButton(
-                        child: Text(
-                          "Alterar",
-                          style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 18.0),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(_scaffoldKey.currentContext);
-                          _alterarMarcacao(marcacao);
-                        },
-                      )
-                    ],
-                  ),
-                  SizedBox(
-                    height: 20.0,
-                  ),
-                  Container(
-                    width: double.infinity,
-                    child: RaisedButton(
+            padding: EdgeInsets.only(right: 25.0, left: 25.0),
+            child: TimePickerWidget(
+              initDateTime: _horarioSelecionado,
+              dateFormat: FORMATO_HORA_PADRAO,
+              pickerTheme: DateTimePickerTheme(
+                  showTitle: false,
+                  itemHeight:
+                      MediaQuery.of(_scaffoldKey.currentContext).size.height *
+                          .05,
+                  pickerHeight:
+                      MediaQuery.of(_scaffoldKey.currentContext).size.height *
+                          .25),
+              onChange: (dateTime, selectedIndex) {
+                _horarioSelecionado = dateTime;
+              },
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              RaisedButton(
+                shape: new RoundedRectangleBorder(
+                    borderRadius: new BorderRadius.circular(10.0),
+                    side: BorderSide(color: corPrincipal)),
+                onPressed: () {
+                  print('Confirmar alteracao marcacao ${marcacao.marcacao}');
+                  if (_horarioSelecionado.compareTo(marcacao.marcacao) == 0 &&
+                      bolAlteracao) {
+                    Navigator.pop(_scaffoldKey.currentContext);
+                  } else if (HomeModule.to
+                      .bloc<PontoBloc>()
+                      .verificarSeExisteMarcacao(_horarioSelecionado)) {
+                    _exibirAlerta(_scaffoldKey.currentContext,
+                        "Marcação já registrada ou inválida", false);
+                  } else {
+                    if (bolAlteracao) {
+                      marcacao.marcacao = _horarioSelecionado;
+                      pontoBloc.alterarMarcacao(marcacao);
+                    } else {
+                      HomeModule.to
+                          .bloc<PontoBloc>()
+                          .registrarMarcacao(marcacao: _horarioSelecionado);
+                    }
+                    Navigator.pop(_scaffoldKey.currentContext);
+                    _exibirAlerta(_scaffoldKey.currentContext,
+                        "Marcação salva com sucesso", true);
+                  }
+                },
+                color: corPrincipal,
+                textColor: Colors.white,
+                child: Text("Confirmar", style: TextStyle(fontSize: 14)),
+              ),
+              SizedBox(
+                width: 20.0,
+              ),
+              bolAlteracao
+                  ? RaisedButton(
                       shape: new RoundedRectangleBorder(
                           borderRadius: new BorderRadius.circular(10.0),
                           side: BorderSide(color: Colors.red)),
@@ -215,11 +200,11 @@ class _HomeScreenState extends State<HomeScreen>
                       },
                       color: Colors.red,
                       textColor: Colors.white,
-                      child: Text("REMOVER", style: TextStyle(fontSize: 14)),
-                    ),
-                  )
-                ],
-              )),
+                      child: Text("Excluir", style: TextStyle(fontSize: 14)),
+                    )
+                  : Container(),
+            ],
+          )
         ],
       ),
     );
@@ -252,28 +237,21 @@ class _HomeScreenState extends State<HomeScreen>
                       stream: AppModule.to.bloc<LoginBloc>().usuarioStream,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          // _iniciarTutorial();
                           return StreamBuilder<PontoModel>(
-                              stream:
-                                  HomeModule.to.bloc<PontoBloc>().pontoStream,
+                              stream: pontoBloc.pontoStream,
                               builder: (context, snapshot) {
-                                if (!snapshot.hasData ||
-                                    HomeModule.to.bloc<PontoBloc>().loading) {
+                                if (!snapshot.hasData || pontoBloc.loading) {
                                   return Center(
                                       child: CircularProgressIndicator());
                                 } else {
                                   return GestureDetector(
                                     onLongPress: () {
-                                      if (!animationStatus) {
-                                        _iconAnimationController.forward();
-                                        _alterarMarcacao(new MarcacaoPontoModel(
-                                                snapshot.data.identUsuario,
-                                                snapshot.data.ident,
-                                                DateTime.now()))
-                                            .whenComplete(() {
-                                          _iconAnimationController.reverse();
-                                        });
-                                      }
+                                      _detalharMarcacao(
+                                          new MarcacaoPontoModel(
+                                              snapshot.data.identUsuario,
+                                              snapshot.data.ident,
+                                              DateTime.now()),
+                                          bolAlteracao: false);
                                     },
                                     child: IconButton(
                                         icon: AnimatedIcon(
@@ -314,22 +292,13 @@ class _HomeScreenState extends State<HomeScreen>
                   Provider.of<MenuController>(context, listen: true).toggle();
                 },
               ),
-              StreamBuilder<bool>(
-                  stream: AppModule.to.bloc<AppBloc>().modoTesteSream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return IconButton(
-                          icon: Icon(
-                            Icons.report_problem,
-                            color:
-                                snapshot.data ? Colors.yellow : Colors.black87,
-                          ),
-                          onPressed: () {
-                            AppModule.to.bloc<AppBloc>().alterarModoTeste();
-                          });
-                    } else {
-                      return Container();
-                    }
+              IconButton(
+                  icon: Icon(
+                    Icons.calendar_today,
+                    color: Colors.black87,
+                  ),
+                  onPressed: () {
+                    AppModule.to.bloc<AppBloc>().irParaDataAtual();
                   }),
             ],
           ),
@@ -340,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen>
             BarraPrincipal(),
             StreamBuilder<DadosIndicadorJornada>(
                 key: keyTempoTrabalho,
-                stream: HomeModule.to.bloc<PontoBloc>().dadosIndicadorStream,
+                stream: pontoBloc.dadosIndicadorStream,
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     return IndicadorJornada(snapshot.data);
@@ -367,13 +336,13 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             Expanded(
               child: StreamBuilder<PontoModel>(
-                stream: HomeModule.to.bloc<PontoBloc>().pontoStream,
+                stream: pontoBloc.pontoStream,
                 builder: (BuildContext context, AsyncSnapshot snapshot) {
                   if (AppModule.to.bloc<LoginBloc>().usuarioAtual == null) {
                     return Center(
                       child: Text("Autenticação não realizada."),
                     );
-                  } else if (!HomeModule.to.bloc<PontoBloc>().loading) {
+                  } else if (!pontoBloc.loading) {
                     return GridView.builder(
                       padding: EdgeInsets.all(16.0),
                       scrollDirection: Axis.vertical,
@@ -393,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen>
                           default:
                             return GestureDetector(
                               onLongPress: () {
-                                _alterarMarcacao(
+                                _detalharMarcacao(
                                     snapshot.data.marcacoes[index]);
                               },
                               child: MaterialButton(
@@ -452,174 +421,15 @@ class _HomeScreenState extends State<HomeScreen>
         ));
   }
 
-  void initTargets() {
-    targets.add(TargetFocus(
-      identify: "Marcar Ponto",
-      keyTarget: keyBtnMarcarPonto,
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Registrar Ponto ficou fácil",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "Primeiro escolha sua conta do google para podermos salvar suas marcações na nuvem! Com um toque uma nova marcação é registrada automáticamente. Um toque longo você pode definir qual o horário da marcação.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-    targets.add(TargetFocus(
-      identify: "Ultimas Marcacoes",
-      keyTarget: keyUltimaMarcacoes,
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Últimas marcações",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "Suas últimas marcações serão mostradas nesse espaço, através delas será feito o cálculo do tempo trabalho.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-    targets.add(TargetFocus(
-      identify: "Tempo Trabalhado",
-      keyTarget: keyTempoTrabalho,
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Tempo Trabalho",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "O tempo trabalho será cálculado através da difereça das marcações de entrada e saída. Será mostrado tempo restando para o termino da sua jornada.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-    targets.add(TargetFocus(
-      identify: "Alterar Jornada",
-      keyTarget: keyBtnConfiguracao,
-      contents: [
-        ContentTarget(
-            align: AlignContent.top,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Alterar Jornada",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "Você poderá alterar aquantidade de horas da sua jornada e tempo padrão de intervalo através do menu de configurações.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-    targets.add(TargetFocus(
-      identify: "Barra Navegacao",
-      targetPosition: TargetPosition(Size(60.0, 60.0), Offset(20.0, 20.0)),
-      contents: [
-        ContentTarget(
-            align: AlignContent.bottom,
-            child: Container(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "Alterar Data",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      "Você consultar ou realizar as marcações em dias diferentes navegando para datas anteriores ou futuras.",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ))
-      ],
-      shape: ShapeLightFocus.Circle,
-    ));
-  }
-
   void _tutorialConcluido() {
     _exibindoTutorial = false;
     AppModule.to.bloc<LoginBloc>().marcarTutorialConcluido();
   }
 
   void _iniciarTutorial() async {
-    if (AppModule.to.bloc<LoginBloc>().iniciarTutorial &&
-        !_exibindoTutorial) {
+    if (AppModule.to.bloc<LoginBloc>().iniciarTutorial && !_exibindoTutorial) {
       print('_iniciarTutorial');
-      
+
       _exibindoTutorial = true;
       TutorialCoachMark(context,
           targets: targets,
@@ -634,5 +444,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _verificarUsuarioLogado(_) {
     AppModule.to.bloc<LoginBloc>().verificarUsuarioLogado();
+    _iniciarTutorial();
   }
 }

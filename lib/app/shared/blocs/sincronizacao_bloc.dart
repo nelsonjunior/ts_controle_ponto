@@ -17,7 +17,8 @@ class SincronizacaoBloc extends BlocBase {
 
   void iniciarSincronizacao() {
     _sincronizacaoEmAndamento.sink.add(true);
-    _sincronizacaoProvider.sincronizarTodos().whenComplete(() {
+    _sincronizacaoProvider.sincronizarTodos();
+    Future.delayed(Duration(seconds: 2)).then((_) {
       _sincronizacaoEmAndamento.sink.add(false);
     });
   }
@@ -26,7 +27,7 @@ class SincronizacaoBloc extends BlocBase {
     _sincronizacaoEmAndamento.sink.add(true);
     _sincronizacaoProvider.carregar(identUsuario);
     HomeModule.to.bloc<PontoBloc>().loading = true;
-    Future.delayed(Duration(seconds: 2)).then((_) {
+    Future.delayed(Duration(seconds: 4)).then((_) {
       _sincronizacaoEmAndamento.sink.add(false);
       print('Sincronizacao Inicial Concluida!!!');
       HomeModule.to.bloc<PontoBloc>().obterPontoLogin();

@@ -26,12 +26,17 @@ class NotificacaoService {
     NotificationDetails platformChannelSpecifics = new NotificationDetails(
         androidPlatformChannelSpecifics, iOSPlatformChannelSpecifics);
 
-    await flutterLocalNotificationsPlugin.schedule(0, 'Lembrete Marcação Ponto',
-        conteudo, horario, platformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.schedule(
+        0,
+        'Lembrete Marcação Ponto para às ${formatarHora.format(horario)}',
+        conteudo,
+        horario.subtract(Duration(minutes: 5)),
+        platformChannelSpecifics,
+        androidAllowWhileIdle: true);
 
     await flutterLocalNotificationsPlugin.schedule(
         1,
-        "Lembrete Marcação Ponto",
+        "Lembrete Marcação Ponto para às ${formatarHora.format(horario)}",
         "Foi adicionar lembre do ponto para às ${formatarHora.format(horario)}",
         DateTime.now().add(Duration(seconds: 15)),
         platformChannelSpecifics);
@@ -40,5 +45,9 @@ class NotificacaoService {
   Future cancelarNotificacoes() async {
     print('Cancelando notificações!!!');
     await flutterLocalNotificationsPlugin.cancelAll();
+  }
+
+  Future<List<PendingNotificationRequest>> angendamentos() {
+    return flutterLocalNotificationsPlugin.pendingNotificationRequests();
   }
 }

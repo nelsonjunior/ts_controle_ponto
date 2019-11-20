@@ -51,4 +51,12 @@ class AppBloc extends BlocBase {
     _modoTeste.close();
     super.dispose();
   }
+
+  void irParaDataAtual() {
+    if (HomeModule.to.bloc<PontoBloc>().loading) {
+      return;
+    }
+    dataSelecionada = DateTime.now();
+    _dataSelecionadaAtual.sink.add(dataSelecionada);
+  }
 }

@@ -10,6 +10,7 @@ class MarcacaoDao {
     final db = await dbHelper.database;
     int id = await db.insert(marcacaoTABLE, marcacaoModel.toMap());
     marcacaoModel.ident = id.toString();
+    print(marcacaoModel.ident);
     return marcacaoModel;
   }
 
