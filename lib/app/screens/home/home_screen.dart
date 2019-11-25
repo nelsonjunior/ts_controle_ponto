@@ -14,6 +14,7 @@ import 'package:ts_controle_ponto/app/shared/components/zoom_scaffold.dart';
 import 'package:ts_controle_ponto/app/shared/contantes.dart';
 import 'package:ts_controle_ponto/app/shared/helpers/tutorial_helper.dart';
 import 'package:ts_controle_ponto/app/shared/models/marcacao_ponto_model.dart';
+import 'package:ts_controle_ponto/app/shared/models/parametro_app_model.dart';
 import 'package:ts_controle_ponto/app/shared/models/ponto_model.dart';
 import 'package:ts_controle_ponto/app/shared/themes/colors.dart';
 import 'package:ts_controle_ponto/app/shared/utils/data_utils.dart';
@@ -48,10 +49,15 @@ class _HomeScreenState extends State<HomeScreen>
 
   DateTime _horarioSelecionado;
 
-  PontoBloc pontoBloc = HomeModule.to.bloc<PontoBloc>();
+  PontoBloc pontoBloc;
+
+  AppBloc appBloc;
 
   @override
   void initState() {
+    pontoBloc = HomeModule.to.bloc<PontoBloc>();
+    appBloc = AppModule.to.bloc<AppBloc>();
+
     _iconAnimationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 500));
     initTargets(targets, keyBtnMarcarPonto, keyUltimaMarcacoes,
@@ -421,22 +427,31 @@ class _HomeScreenState extends State<HomeScreen>
         ));
   }
 
-  void _tutorialConcluido() {
+  void _pularTutorial() {
+    print('PULAR COMPLETO');
     _exibindoTutorial = false;
-    AppModule.to.bloc<LoginBloc>().marcarTutorialConcluido();
+    appBloc.definirPularTutorial(MOSTRAR_TUTORIAL_HOME);
+  }
+
+  void _tutorialConcluido() {
+    print('TUTORIAL COMPLETO');
+    _exibindoTutorial = false;
   }
 
   void _iniciarTutorial() async {
-    if (AppModule.to.bloc<LoginBloc>().iniciarTutorial && !_exibindoTutorial) {
-      print('_iniciarTutorial');
+    var tutorailHome = await appBloc.exibirTutorial(MOSTRAR_TUTORIAL_HOME);
+    print('INICIAR TUTORIAL: $tutorailHome');
 
+    if (tutorailHome && !_exibindoTutorial) {
       _exibindoTutorial = true;
+
       TutorialCoachMark(context,
           targets: targets,
           colorShadow: Colors.black54,
           textSkip: "Pular",
           paddingFocus: 20.0,
           opacityShadow: 0.8,
+          clickSkip: _pularTutorial,
           finish: _tutorialConcluido)
         ..show();
     }

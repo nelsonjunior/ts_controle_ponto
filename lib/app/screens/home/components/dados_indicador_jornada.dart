@@ -4,6 +4,7 @@ class DadosIndicadorJornada {
   double percentualJornada;
   String descIndicador1;
   String descIndicador2;
+  DateTime dtHoraNotificacao;
 
   DadosIndicadorJornada(this.horasTrabalhadas, this.percentualJornadaInicial,
       this.percentualJornada, this.descIndicador1, this.descIndicador2);

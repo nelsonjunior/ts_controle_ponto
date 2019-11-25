@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:ts_controle_ponto/app/app_module.dart';
 import 'package:ts_controle_ponto/app/screens/configuracao/components/spinner_botton.dart';
-import 'package:ts_controle_ponto/app/screens/home/home_module.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/configuracao_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/blocs/sincronizacao_bloc.dart';
 import 'package:ts_controle_ponto/app/shared/services/noticiacao_service.dart';
@@ -167,7 +166,7 @@ class ConfiguracaoScreen extends StatelessWidget {
             ),
             Container(
               child: FutureBuilder(
-                future: HomeModule.to
+                future: AppModule.to
                     .getDependency<NotificacaoService>()
                     .angendamentos(),
                 builder: (context, snapshot) {

@@ -34,7 +34,7 @@ dependencies:
   provider: ^2.0.0
   slide_popup_dialog: ^0.0.2
   flutter_launcher_icons: ^0.7.3
-  flutter_native_splash: ^0.1.8+4
+  flutter_native_splash: ^0.1.9
   tutorial_coach_mark: ^0.3.0
   sqflite: ^1.1.7+1
   path_provider: ^1.4.0

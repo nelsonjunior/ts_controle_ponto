@@ -4,30 +4,22 @@ import 'package:bloc_pattern/bloc_pattern.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:ts_controle_ponto/app/screens/home/home_module.dart';
 import 'package:ts_controle_ponto/app/screens/home/ponto_bloc.dart';
+import 'package:ts_controle_ponto/app/shared/models/parametro_app_model.dart';
+import 'package:ts_controle_ponto/app/shared/repositories/repository.dart';
 
 class AppBloc extends BlocBase {
-  DateTime dataSelecionada = DateTime.now();
+  final Repository _repository;
 
-  bool modoTeste = false;
+  DateTime dataSelecionada = DateTime.now();
 
   BehaviorSubject<DateTime> _dataSelecionadaAtual;
 
-  BehaviorSubject<bool> _modoTeste;
-
-  AppBloc() {
+  AppBloc(this._repository) {
     _dataSelecionadaAtual =
         new BehaviorSubject<DateTime>.seeded(this.dataSelecionada);
-    _modoTeste = new BehaviorSubject<bool>.seeded(false);
   }
 
   Stream<DateTime> get dataStream => _dataSelecionadaAtual.stream;
-
-  Stream<bool> get modoTesteSream => _modoTeste.stream;
-
-  void alterarModoTeste() {
-    modoTeste = !modoTeste;
-    _modoTeste.sink.add(modoTeste);
-  }
 
   void dataAnterior() {
     if (HomeModule.to.bloc<PontoBloc>().loading) {
@@ -45,18 +37,30 @@ class AppBloc extends BlocBase {
     _dataSelecionadaAtual.sink.add(dataSelecionada);
   }
 
-  @override
-  void dispose() {
-    _dataSelecionadaAtual.close();
-    _modoTeste.close();
-    super.dispose();
-  }
-
   void irParaDataAtual() {
     if (HomeModule.to.bloc<PontoBloc>().loading) {
       return;
     }
     dataSelecionada = DateTime.now();
     _dataSelecionadaAtual.sink.add(dataSelecionada);
+  }
+
+  Future<bool> exibirTutorial(String identTutorial) async {
+    ParametroAppModel param =
+        await _repository.recuperarParametro(identTutorial);
+    await _repository.incluirOuAlterarParametro(
+        ParametroAppModel(identTutorial, false.toString()));
+    return (param == null || param.valorParametro == 'true') ? true : false;
+  }
+
+  void definirPularTutorial(String identTutorial) async {
+    _repository.incluirOuAlterarParametro(
+        ParametroAppModel(identTutorial, true.toString()));
+  }
+
+  @override
+  void dispose() {
+    _dataSelecionadaAtual.close();
+    super.dispose();
   }
 }

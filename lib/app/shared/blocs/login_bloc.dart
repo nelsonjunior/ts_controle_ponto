@@ -17,15 +17,11 @@ class LoginBloc extends BlocBase {
 
   UsuarioModel _usuarioModel;
 
-  bool _iniciarTutorial = true;
-
   GoogleSignInAccount _googleAccount;
 
   UsuarioModel get usuarioAtual => _usuarioModel;
 
   GoogleSignInAccount get googleAccount => _googleAccount;
-
-  bool get iniciarTutorial => _iniciarTutorial;
 
   BehaviorSubject<UsuarioModel> _usario;
 
@@ -64,9 +60,9 @@ class LoginBloc extends BlocBase {
 
         UsuarioModel usuario =
             await _repository.recuperarUsuario(account.email);
-        
+
         _usario.sink.add(_usuarioModel);
-        
+
         AppModule.to.bloc<ConfiguracaoBloc>().recuperarConfiguracao();
 
         if (usuario == null) {
@@ -76,12 +72,6 @@ class LoginBloc extends BlocBase {
           _repository.incluirOuAlterarParametro(
               ParametroAppModel(USUARIO_LOGADO, _usuarioModel.email));
 
-          ParametroAppModel paramIniciarTutorial =
-              await _repository.recuperarParametro(INICIAR_TUTORIAL);
-          if (paramIniciarTutorial == null) {
-            _repository.incluirOuAlterarParametro(
-                ParametroAppModel(INICIAR_TUTORIAL, true.toString()));
-          }
           AppModule.to
               .bloc<SincronizacaoBloc>()
               .iniciarSincronizacaoInicial(_usuarioModel.email);
@@ -118,11 +108,6 @@ class LoginBloc extends BlocBase {
 
       HomeModule.to.bloc<PontoBloc>().limparPonto();
     });
-  }
-
-  void marcarTutorialConcluido() {
-    _repository.incluirOuAlterarParametro(
-        ParametroAppModel(INICIAR_TUTORIAL, false.toString()));
   }
 
   @override

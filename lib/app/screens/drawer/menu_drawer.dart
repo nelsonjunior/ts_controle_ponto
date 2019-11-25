@@ -10,9 +10,9 @@ import 'package:ts_controle_ponto/app/shared/themes/colors.dart';
 
 class MenuScreen extends StatelessWidget {
   final List<MenuItem> options = [
-    MenuItem(Icons.format_list_bulleted, 'Histórico'),
-    MenuItem(Icons.assignment, 'Relatórios'),
-    MenuItem(Icons.assessment, 'Gráficos'),
+    MenuItem(Icons.format_list_bulleted, 'Histórico - Em breve'),
+    MenuItem(Icons.assignment, 'Relatórios - Em breve'),
+    MenuItem(Icons.assessment, 'Gráficos - Em breve'),
   ];
 
   @override
